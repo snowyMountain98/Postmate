@@ -11,179 +11,199 @@
 
 <body>
     <div class="container">
-    <h1>숫자 조합 찾기</h1>
+        <h1>숫자 조합 찾기</h1>
 
-    <label>목표 합</label>
-    <input id="target" type="number" value="700">
+        <label>목표 합</label>
+        <input id="target" type="number" value="700">
 
-    <label>숫자 입력</label>
-    <input id="number" type="number" placeholder="숫자를 입력하세요">
+        <label>숫자 입력</label>
+        <input id="number" type="number" placeholder="숫자를 입력하세요">
 
-    <div class="button-row">
-        <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 삭제</button>
-        <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
-    </div>
-
-    <button id="clearBtn" onclick="clearAll()">🗑 전체 초기화</button>
-
-    <div class="box">
-        <div id="count">입력 개수 : 0개</div>
-        <b>입력된 숫자</b>
-        <div id="numbers">아직 없습니다.</div>
-    </div>
-
-    <div class="box">
-
-        <b>결과</b>
-
-        <div id="result">
-            아직 찾지 못했습니다.
+        <div class="button-row">
+            <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 삭제</button>
+            <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
         </div>
 
-    </div>
+        <button id="clearBtn" onclick="clearAll()">🗑 전체 초기화</button>
 
-<script>
+        <div class="box">
+            <div id="count">입력 개수 : 0개</div>
+            <b>입력된 숫자</b>
+            <div id="numbers">아직 없습니다.</div>
+        </div>
 
-let numbers=[];
+        <div class="box">
 
-const numberInput=document.getElementById("number");
+            <b>결과</b>
 
-numberInput.focus();
+            <div id="result">
+                아직 찾지 못했습니다.
+            </div>
 
-numberInput.addEventListener("keydown",function(e){
+        </div>
 
-    if(e.key==="Enter"){
+        <script>
 
-        addNumber();
+            let numbers = [];
 
-    }
+            const numberInput = document.getElementById("number");
 
-});
+            numberInput.focus();
 
-function updateScreen(){
+            numberInput.addEventListener("keydown", function (e) {
 
-    document.getElementById("count").innerHTML=
-        "입력 개수 : "+numbers.length+"개";
+                if (e.key === "Enter") {
 
-    document.getElementById("numbers").innerHTML=
+                    addNumber();
 
-        numbers.length==0 ?
+                }
 
-        "아직 없습니다."
+            });
 
-        :
+            function updateScreen() {
 
-        numbers.join(", ");
+                document.getElementById("count").innerHTML =
+                    "입력 개수 : " + numbers.length + "개";
 
-}
+                document.getElementById("numbers").innerHTML =
 
-function addNumber(){
+                    numbers.length == 0 ?
 
-    let value=numberInput.value.trim();
+                        "아직 없습니다."
 
-    if(value==""){
+                        :
 
-        return;
-
-    }
-
-    numbers.push(Number(value));
-
-    numberInput.value="";
-
-    numberInput.focus();
-
-    updateScreen();
-
-    findCombination();
-
-}
-
-function deleteLast(){
-
-    if(numbers.length==0){
-
-        return;
-
-    }
-
-    numbers.pop();
-
-    updateScreen();
-
-    document.getElementById("result").innerHTML=
-        "아직 찾지 못했습니다.";
-
-    numberInput.focus();
-
-}
-
-function clearAll(){
-
-    numbers=[];
-
-    updateScreen();
-
-    document.getElementById("result").innerHTML=
-        "아직 찾지 못했습니다.";
-
-    numberInput.focus();
-
-}
-
-function findCombination(){
-
-    const target=
-        Number(document.getElementById("target").value);
-
-    // 2개
-    for(let i=0;i<numbers.length;i++){
-
-        for(let j=i+1;j<numbers.length;j++){
-
-            if(numbers[i]+numbers[j]==target){
-
-                document.getElementById("result").innerHTML=
-                    "✅ "+numbers[i]+" + "+numbers[j]+" = "+target;
-
-                return;
+                        numbers.join(", ");
 
             }
 
-        }
+            function addNumber() {
 
-    }
+                let value = numberInput.value.trim();
 
-    // 3개
-    for(let i=0;i<numbers.length;i++){
-
-        for(let j=i+1;j<numbers.length;j++){
-
-            for(let k=j+1;k<numbers.length;k++){
-
-                if(numbers[i]+numbers[j]+numbers[k]==target){
-
-                    document.getElementById("result").innerHTML=
-                        "✅ "+numbers[i]+" + "+numbers[j]+" + "+numbers[k]+" = "+target;
+                if (value == "") {
 
                     return;
 
                 }
 
+                numbers.push(Number(value));
+
+                numberInput.value = "";
+
+                numberInput.focus();
+
+                updateScreen();
+
+                findCombination();
+
             }
 
-        }
+            function deleteLast() {
 
-    }
+                if (numbers.length == 0) {
 
-    document.getElementById("result").innerHTML=
-        "아직 찾지 못했습니다.";
+                    return;
 
-}
+                }
 
-updateScreen();
+                numbers.pop();
 
-</script>
-</div>
+                updateScreen();
+
+                document.getElementById("result").innerHTML =
+                    "아직 찾지 못했습니다.";
+
+                numberInput.focus();
+
+            }
+
+            function clearAll() {
+
+                numbers = [];
+
+                updateScreen();
+
+                document.getElementById("result").innerHTML =
+                    "아직 찾지 못했습니다.";
+
+                numberInput.focus();
+
+            }
+
+            function findCombination() {
+
+                const target =
+                    Number(document.getElementById("target").value);
+
+                // 2개
+                for (let i = 0; i < numbers.length; i++) {
+
+                    for (let j = i + 1; j < numbers.length; j++) {
+
+                        if (numbers[i] + numbers[j] == target) {
+
+                            showResult("✅ " + numbers[i] + " + " + numbers[j] + " = " + target);
+
+                            return;
+
+                        }
+
+                    }
+
+                }
+
+                // 3개
+                for (let i = 0; i < numbers.length; i++) {
+
+                    for (let j = i + 1; j < numbers.length; j++) {
+
+                        for (let k = j + 1; k < numbers.length; k++) {
+
+                            if (numbers[i] + numbers[j] + numbers[k] == target) {
+
+                                showResult("✅ " + numbers[i] + " + " + numbers[j] + " + " + numbers[k] + " = " + target);
+
+                                return;
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                document.getElementById("result").innerHTML =
+                    "아직 찾지 못했습니다.";
+
+            }
+
+            function showResult(message) {
+
+                const result = document.getElementById("result");
+
+                result.innerHTML = message;
+
+                // 키패드 닫기
+                numberInput.blur();
+
+                // 결과 위치로 이동
+                setTimeout(function () {
+
+                    result.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+
+                }, 200);
+
+            }
+
+            updateScreen();
+
+        </script>
+    </div>
 </body>
+
 </html>
