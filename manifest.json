@@ -1,18 +1,18 @@
 {
     "name": "NUMBER QUEST",
-    "short_name": "SUM",
+    "short_name": "우표 금액 조합",
     "start_url": "./",
     "display": "standalone",
     "background_color": "#FFF4E6",
     "theme_color": "#5B4B8A",
     "icons": [
         {
-            "src": "./icons/icon-192.png",
+            "src": "./icons/icon192.PNG",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "./icons/icon-512.png",
+            "src": "./icons/icon512.PNG",
             "sizes": "512x512",
             "type": "image/png"
         }
