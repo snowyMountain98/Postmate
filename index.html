@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <title>숫자 조합 찾기</title>
+
+    <style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:'Gaegu', cursive;
+
+    background:linear-gradient(
+        180deg,
+        #FFFDF8 0%,
+        #FFF7FB 100%
+    );
+
+    min-height:100vh;
+
+    padding:25px;
+
+    color:#555;
+}
+
+.container{
+
+    max-width:520px;
+
+    margin:auto;
+}
+
+h1{
+
+    text-align:center;
+
+    font-size:48px;
+
+    margin-bottom:30px;
+
+    color:#6C7A89;
+
+    letter-spacing:2px;
+}
+
+label{
+
+    display:block;
+
+    font-size:28px;
+
+    margin-bottom:10px;
+
+    margin-top:15px;
+
+    color:#777;
+}
+
+input{
+
+    width:100%;
+
+    border:none;
+
+    outline:none;
+
+    padding:18px;
+
+    font-size:30px;
+
+    border-radius:20px;
+
+    background:white;
+
+    box-shadow:
+
+        0 8px 20px rgba(0,0,0,.08);
+
+    transition:.25s;
+}
+
+input:focus{
+
+    transform:scale(1.02);
+
+    box-shadow:
+
+        0 12px 28px rgba(120,170,255,.25);
+
+}
+
+button{
+
+    width:100%;
+
+    margin-top:12px;
+
+    padding:18px;
+
+    border:none;
+
+    border-radius:20px;
+
+    font-size:28px;
+
+    font-family:'Gaegu', cursive;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+    box-shadow:
+
+        0 8px 18px rgba(0,0,0,.08);
+
+}
+
+button:hover{
+
+    transform:translateY(-3px);
+
+}
+
+button:active{
+
+    transform:scale(.97);
+
+}
+
+#addBtn{
+
+    background:#BEE3F8;
+
+}
+
+#deleteBtn{
+
+    background:#FFE0B2;
+
+}
+
+#clearBtn{
+
+    background:#FFCDD2;
+
+}
+
+.box{
+
+    margin-top:25px;
+
+    padding:20px;
+
+    background:white;
+
+    border-radius:25px;
+
+    box-shadow:
+
+        0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.box b{
+
+    display:block;
+
+    font-size:30px;
+
+    margin-bottom:15px;
+
+}
+
+#count{
+
+    color:#999;
+
+    font-size:24px;
+
+    margin-bottom:15px;
+
+}
+
+#numbers{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+}
+
+.number-chip{
+
+    background:#E8F5E9;
+
+    padding:10px 18px;
+
+    border-radius:50px;
+
+    font-size:28px;
+
+    box-shadow:
+
+        0 3px 8px rgba(0,0,0,.05);
+
+    animation:pop .25s;
+
+}
+
+#result{
+
+    min-height:80px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    font-size:36px;
+
+    color:#5BA87A;
+
+    font-weight:bold;
+
+}
+
+.success{
+
+    animation:success .5s;
+
+}
+
+@keyframes pop{
+
+    from{
+
+        transform:scale(.5);
+
+        opacity:0;
+
+    }
+
+    to{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+}
+
+@keyframes success{
+
+    0%{
+
+        transform:scale(.6);
+
+    }
+
+    40%{
+
+        transform:scale(1.15);
+
+    }
+
+    100%{
+
+        transform:scale(1);
+
+    }
+
+}
+
+@media (max-width:600px){
+
+    h1{
+
+        font-size:42px;
+
+    }
+
+    label{
+
+        font-size:26px;
+
+    }
+
+    input{
+
+        font-size:26px;
+
+    }
+
+    button{
+
+        font-size:24px;
+
+    }
+
+    #result{
+
+        font-size:30px;
+
+    }
+
+}
+    </style>
+
+</head>
+
+<body>
+    <div class="container">
+    <h1>숫자 조합 찾기</h1>
+
+    <label>목표 합</label>
+    <input id="target" type="number" value="700">
+
+    <label>숫자 입력</label>
+    <input id="number" type="number" placeholder="숫자를 입력하세요">
+
+    <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
+    <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 숫자 삭제</button>
+    <button id="clearBtn" onclick="clearAll()">🗑 전체 초기화</button>
+
+    <div class="box">
+
+        <div id="count">
+            입력 개수 : 0개
+        </div>
+
+        <b>입력된 숫자</b>
+
+        <div id="numbers">
+            아직 없습니다.
+        </div>
+
+    </div>
+
+    <div class="box">
+
+        <b>결과</b>
+
+        <div id="result">
+            아직 찾지 못했습니다.
+        </div>
+
+    </div>
+
+<script>
+
+let numbers=[];
+
+const numberInput=document.getElementById("number");
+
+numberInput.focus();
+
+numberInput.addEventListener("keydown",function(e){
+
+    if(e.key==="Enter"){
+
+        addNumber();
+
+    }
+
+});
+
+function updateScreen(){
+
+    document.getElementById("count").innerHTML=
+        "입력 개수 : "+numbers.length+"개";
+
+    document.getElementById("numbers").innerHTML=
+
+        numbers.length==0 ?
+
+        "아직 없습니다."
+
+        :
+
+        numbers.join(", ");
+
+}
+
+function addNumber(){
+
+    let value=numberInput.value.trim();
+
+    if(value==""){
+
+        return;
+
+    }
+
+    numbers.push(Number(value));
+
+    numberInput.value="";
+
+    numberInput.focus();
+
+    updateScreen();
+
+    findCombination();
+
+}
+
+function deleteLast(){
+
+    if(numbers.length==0){
+
+        return;
+
+    }
+
+    numbers.pop();
+
+    updateScreen();
+
+    document.getElementById("result").innerHTML=
+        "아직 찾지 못했습니다.";
+
+    numberInput.focus();
+
+}
+
+function clearAll(){
+
+    numbers=[];
+
+    updateScreen();
+
+    document.getElementById("result").innerHTML=
+        "아직 찾지 못했습니다.";
+
+    numberInput.focus();
+
+}
+
+function findCombination(){
+
+    const target=
+        Number(document.getElementById("target").value);
+
+    // 2개
+    for(let i=0;i<numbers.length;i++){
+
+        for(let j=i+1;j<numbers.length;j++){
+
+            if(numbers[i]+numbers[j]==target){
+
+                document.getElementById("result").innerHTML=
+                    "✅ "+numbers[i]+" + "+numbers[j]+" = "+target;
+
+                return;
+
+            }
+
+        }
+
+    }
+
+    // 3개
+    for(let i=0;i<numbers.length;i++){
+
+        for(let j=i+1;j<numbers.length;j++){
+
+            for(let k=j+1;k<numbers.length;k++){
+
+                if(numbers[i]+numbers[j]+numbers[k]==target){
+
+                    document.getElementById("result").innerHTML=
+                        "✅ "+numbers[i]+" + "+numbers[j]+" + "+numbers[k]+" = "+target;
+
+                    return;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    document.getElementById("result").innerHTML=
+        "아직 찾지 못했습니다.";
+
+}
+
+updateScreen();
+
+</script>
+</div>
+</body>
+</html>
