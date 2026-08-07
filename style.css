@@ -66,6 +66,17 @@ button {
         0 8px 18px rgba(0,0,0,0.08);
 }
 
+.button-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.button-row button {
+    width: 50%;
+    margin-top: 0;
+}
+
 button:active {
     transform: scale(0.97);
 }

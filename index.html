@@ -19,22 +19,17 @@
     <label>숫자 입력</label>
     <input id="number" type="number" placeholder="숫자를 입력하세요">
 
-    <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
-    <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 숫자 삭제</button>
+    <div class="button-row">
+        <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 삭제</button>
+        <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
+    </div>
+
     <button id="clearBtn" onclick="clearAll()">🗑 전체 초기화</button>
 
     <div class="box">
-
-        <div id="count">
-            입력 개수 : 0개
-        </div>
-
+        <div id="count">입력 개수 : 0개</div>
         <b>입력된 숫자</b>
-
-        <div id="numbers">
-            아직 없습니다.
-        </div>
-
+        <div id="numbers">아직 없습니다.</div>
     </div>
 
     <div class="box">
