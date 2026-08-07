@@ -5,12 +5,10 @@
 }
 
 body {
-    font-family: 'Gaegu', cursive;
-    background: linear-gradient(
-        180deg,
-        #FFFDF8 0%,
-        #FFF7FB 100%
-    );
+    font-family: 'Nanum Gothic Coding', monospace;
+    background: linear-gradient(180deg,
+            #FFFDF8 0%,
+            #FFF7FB 100%);
     min-height: 100vh;
     padding: 25px;
     color: #555;
@@ -45,7 +43,7 @@ input {
     outline: none;
     background: white;
     box-shadow:
-        0 8px 20px rgba(0,0,0,0.08);
+        0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 input:focus {
@@ -59,11 +57,11 @@ button {
     border: none;
     border-radius: 20px;
     font-size: 28px;
-    font-family: 'Gaegu', cursive;
+    font-family: 'Nanum Gothic Coding', monospace;
     cursor: pointer;
     transition: 0.2s;
     box-shadow:
-        0 8px 18px rgba(0,0,0,0.08);
+        0 8px 18px rgba(0, 0, 0, 0.08);
 }
 
 .button-row {
@@ -99,7 +97,7 @@ button:active {
     background: white;
     border-radius: 25px;
     box-shadow:
-        0 8px 20px rgba(0,0,0,0.08);
+        0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 .box b {
@@ -123,7 +121,7 @@ button:active {
     background: #E8F5E9;
     padding: 10px 18px;
     border-radius: 50px;
-    font-size: 28px;
+    font-size: 24px;
 }
 
 #result {
@@ -132,12 +130,12 @@ button:active {
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 36px;
     color: #5BA87A;
+    font-size: 34px;
     font-weight: bold;
 }
 
-@media(max-width:600px){
+@media(max-width:600px) {
     h1 {
         font-size: 42px;
     }
