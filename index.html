@@ -14,10 +14,10 @@
         <h1>숫자 조합 찾기</h1>
 
         <label>목표 합</label>
-        <input id="target" type="number" value="700">
+        <input id="target" type="tel" inputmode="numeric" pattern="[0-9]*" value="700">
 
         <label>숫자 입력</label>
-        <input id="number" type="number" placeholder="숫자를 입력하세요">
+        <input id="number" type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="숫자를 입력하세요">
 
         <div class="button-row">
             <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 삭제</button>
