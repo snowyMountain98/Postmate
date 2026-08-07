@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>숫자 조합 찾기</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -102,9 +101,7 @@
             function deleteLast() {
 
                 if (numbers.length == 0) {
-
                     return;
-
                 }
 
                 numbers.pop();
@@ -113,76 +110,49 @@
 
                 document.getElementById("result").innerHTML =
                     "아직 찾지 못했습니다.";
-
-                numberInput.focus();
-
             }
 
             function clearAll() {
-
                 numbers = [];
 
                 updateScreen();
 
                 document.getElementById("result").innerHTML =
                     "아직 찾지 못했습니다.";
-
-                numberInput.focus();
-
             }
 
             function findCombination() {
 
-                const target =
-                    Number(document.getElementById("target").value);
+                const target = Number(document.getElementById("target").value);
 
                 // 2개
                 for (let i = 0; i < numbers.length; i++) {
-
                     for (let j = i + 1; j < numbers.length; j++) {
-
                         if (numbers[i] + numbers[j] == target) {
-
                             showResult("✅ " + numbers[i] + " + " + numbers[j] + " = " + target);
-
                             return;
-
                         }
-
                     }
-
                 }
 
                 // 3개
                 for (let i = 0; i < numbers.length; i++) {
-
                     for (let j = i + 1; j < numbers.length; j++) {
-
                         for (let k = j + 1; k < numbers.length; k++) {
-
                             if (numbers[i] + numbers[j] + numbers[k] == target) {
-
                                 showResult("✅ " + numbers[i] + " + " + numbers[j] + " + " + numbers[k] + " = " + target);
-
                                 return;
-
                             }
-
                         }
-
                     }
-
                 }
 
                 document.getElementById("result").innerHTML =
                     "아직 찾지 못했습니다.";
-
             }
 
             function showResult(message) {
-
                 const result = document.getElementById("result");
-
                 result.innerHTML = message;
 
                 // 키패드 닫기
@@ -190,14 +160,11 @@
 
                 // 결과 위치로 이동
                 setTimeout(function () {
-
                     result.scrollIntoView({
                         behavior: "smooth",
                         block: "center"
                     });
-
                 }, 200);
-
             }
 
             updateScreen();
