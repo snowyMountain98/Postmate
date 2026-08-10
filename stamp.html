@@ -12,6 +12,8 @@
 </head>
 
 <body>
+    <div id="header"></div>
+
     <div class="container">
         <h1>우표 금액 조합 찾기</h1>
 
@@ -45,6 +47,12 @@
         </div>
 
         <script>
+            /* 헤더 */
+            fetch("header.html")
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("header").innerHTML = data;
+                });
 
             let numbers = [];
 
@@ -53,40 +61,21 @@
             numberInput.focus();
 
             numberInput.addEventListener("keydown", function (e) {
-
                 if (e.key === "Enter") {
-
                     addNumber();
-
                 }
-
             });
 
             function updateScreen() {
-
-                document.getElementById("count").innerHTML =
-                    "입력 개수 : " + numbers.length + "개";
-
-                document.getElementById("numbers").innerHTML =
-
-                    numbers.length == 0 ?
-
-                        "아직 없습니다."
-
-                        :
-
-                        numbers.join(", ");
-
+                document.getElementById("count").innerHTML = "입력 개수 : " + numbers.length + "개";
+                document.getElementById("numbers").innerHTML = numbers.length == 0 ? "아직 없습니다." : numbers.join(", ");
             }
 
             function addNumber() {
-
                 let value = numberInput.value.trim();
 
                 if (value == "") {
-
                     return;
-
                 }
 
                 numbers.push(Number(value));
@@ -98,11 +87,9 @@
                 updateScreen();
 
                 findCombination();
-
             }
 
             function deleteLast() {
-
                 if (numbers.length == 0) {
                     return;
                 }
@@ -111,8 +98,7 @@
 
                 updateScreen();
 
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
+                document.getElementById("result").innerHTML = "아직 찾지 못했습니다.";
             }
 
             function clearAll() {
@@ -120,12 +106,10 @@
 
                 updateScreen();
 
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
+                document.getElementById("result").innerHTML = "아직 찾지 못했습니다.";
             }
 
             function findCombination() {
-
                 const target = Number(document.getElementById("target").value);
 
                 // 2개
@@ -150,8 +134,7 @@
                     }
                 }
 
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
+                document.getElementById("result").innerHTML = "아직 찾지 못했습니다.";
             }
 
             function showResult(message) {

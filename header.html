@@ -1,0 +1,23 @@
+<!-- =========================
+     공통 Header
+========================= -->
+
+<nav class="top-nav">
+
+    <!-- 뒤로가기 -->
+    <button type="button" class="nav-button back-button" onclick="
+            if (document.referrer) {
+                history.back();
+            } else {
+                location.href='index.html';
+            }
+        ">
+        ← 뒤로
+    </button>
+
+    <!-- 홈 -->
+    <a href="index.html" class="nav-button home-button">
+        ⌂ 홈
+    </a>
+
+</nav>
