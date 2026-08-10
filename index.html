@@ -4,175 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우표 금액 조합 찾기</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="apple-touch-icon" href="./icons/icon192.png">
-    <link rel="icon" type="image/png" href="./icons/icon192.png">
-    <link rel="manifest" href="manifest.json">
+    <title>우편친구</title>
+    <link rel="stylesheet" href="main.css">
 </head>
+
 
 <body>
     <div class="container">
-        <h1>우표 금액 조합 찾기</h1>
+        <h1>✉+ 우편친구</h1>
+        <p class="main-description">우편에 필요한 작은 도구들을 모아두었어요.</p>
 
-        <label>목표 금액</label>
-        <input id="target" type="number" inputmode="numeric" pattern="[0-9]*" value="520">
+        <div class="menu-list">
+            <!-- 우표 금액 조합 -->
+            <a href="stamp.html" class="menu-card">
+                <div class="menu-icon">✉</div>
+                <div class="menu-text">
+                    <h2>우표 금액 조합 찾기</h2>
+                    <p>
+                        가지고 있는 우표로
+                        원하는 금액을 만들 수 있는지 찾아요.
+                    </p>
+                </div>
+                <div class="menu-arrow">></div>
+            </a>
 
-        <label>액면가 입력</label>
-        <input id="number" type="number" inputmode="numeric" pattern="[0-9]*">
-
-        <div class="button-row">
-            <button id="deleteBtn" onclick="deleteLast()">↩ 삭제</button>
-            <button id="addBtn" onclick="addNumber()">➕ 추가</button>
-        </div>
-
-        <button id="clearBtn" onclick="clearAll()">🗑 초기화</button>
-
-        <div class="box">
-            <div id="count">입력 개수 : 0개</div>
-            <b>입력된 금액</b>
-            <div id="numbers">아직 없습니다.</div>
-        </div>
-
-        <div class="box">
-
-            <b>결과</b>
-
-            <div id="result">
-                아직 찾지 못했습니다.
-            </div>
+            <!-- 우체국 찾기 -->
+            <a href="#" class="menu-card" onclick="alert('준비 중이에요!')">
+                <div class="menu-icon">🏣</div>
+                <div class="menu-text">
+                    <h2>우체국 찾기</h2>
+                    <p>가까운 우체국을 찾아요.</p>
+                </div>
+                <div class="menu-arrow">></div>
+            </a>
 
         </div>
 
-        <script>
-
-            let numbers = [];
-
-            const numberInput = document.getElementById("number");
-
-            numberInput.focus();
-
-            numberInput.addEventListener("keydown", function (e) {
-
-                if (e.key === "Enter") {
-
-                    addNumber();
-
-                }
-
-            });
-
-            function updateScreen() {
-
-                document.getElementById("count").innerHTML =
-                    "입력 개수 : " + numbers.length + "개";
-
-                document.getElementById("numbers").innerHTML =
-
-                    numbers.length == 0 ?
-
-                        "아직 없습니다."
-
-                        :
-
-                        numbers.join(", ");
-
-            }
-
-            function addNumber() {
-
-                let value = numberInput.value.trim();
-
-                if (value == "") {
-
-                    return;
-
-                }
-
-                numbers.push(Number(value));
-
-                numberInput.value = "";
-
-                numberInput.focus();
-
-                updateScreen();
-
-                findCombination();
-
-            }
-
-            function deleteLast() {
-
-                if (numbers.length == 0) {
-                    return;
-                }
-
-                numbers.pop();
-
-                updateScreen();
-
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
-            }
-
-            function clearAll() {
-                numbers = [];
-
-                updateScreen();
-
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
-            }
-
-            function findCombination() {
-
-                const target = Number(document.getElementById("target").value);
-
-                // 2개
-                for (let i = 0; i < numbers.length; i++) {
-                    for (let j = i + 1; j < numbers.length; j++) {
-                        if (numbers[i] + numbers[j] == target) {
-                            showResult("✅ " + numbers[i] + " + " + numbers[j] + " = " + target);
-                            return;
-                        }
-                    }
-                }
-
-                // 3개
-                for (let i = 0; i < numbers.length; i++) {
-                    for (let j = i + 1; j < numbers.length; j++) {
-                        for (let k = j + 1; k < numbers.length; k++) {
-                            if (numbers[i] + numbers[j] + numbers[k] == target) {
-                                showResult("✅ " + numbers[i] + " + " + numbers[j] + " + " + numbers[k] + " = " + target);
-                                return;
-                            }
-                        }
-                    }
-                }
-
-                document.getElementById("result").innerHTML =
-                    "아직 찾지 못했습니다.";
-            }
-
-            function showResult(message) {
-                const result = document.getElementById("result");
-                result.innerHTML = message;
-
-                // 키패드 닫기
-                numberInput.blur();
-
-                // 결과 위치로 이동
-                setTimeout(function () {
-                    result.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center"
-                    });
-                }, 200);
-            }
-
-            updateScreen();
-
-        </script>
+        <footer>
+            <p>POSTMATE</p>
+        </footer>
     </div>
 </body>
 
