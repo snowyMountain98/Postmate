@@ -1,6 +1,6 @@
 {
-    "name": "NUMBER QUEST",
-    "short_name": "우표 금액 조합",
+    "name": "Post mate",
+    "short_name": "우편 친구",
     "start_url": "./",
     "display": "standalone",
     "background_color": "#FFF4E6",
