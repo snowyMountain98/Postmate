@@ -1,6 +1,6 @@
 {
-    "name": "Post mate",
-    "short_name": "우편 친구",
+    "name": "Postmate",
+    "short_name": "Postmate",
     "start_url": "./",
     "display": "standalone",
     "background_color": "#FFF4E6",
