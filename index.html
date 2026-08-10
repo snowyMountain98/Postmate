@@ -13,24 +13,24 @@
 
 <body>
     <div class="container">
-        <h1>숫자 조합 찾기</h1>
+        <h1>우표 금액 조합 찾기</h1>
 
-        <label>목표 합</label>
+        <label>목표 금액</label>
         <input id="target" type="number" inputmode="numeric" pattern="[0-9]*" value="520">
 
-        <label>숫자 입력</label>
+        <label>액면가 입력</label>
         <input id="number" type="number" inputmode="numeric" pattern="[0-9]*">
 
         <div class="button-row">
-            <button id="deleteBtn" onclick="deleteLast()">↩ 마지막 삭제</button>
-            <button id="addBtn" onclick="addNumber()">➕ 숫자 추가</button>
+            <button id="deleteBtn" onclick="deleteLast()">↩ 삭제</button>
+            <button id="addBtn" onclick="addNumber()">➕ 추가</button>
         </div>
 
-        <button id="clearBtn" onclick="clearAll()">🗑 전체 초기화</button>
+        <button id="clearBtn" onclick="clearAll()">🗑 초기화</button>
 
         <div class="box">
             <div id="count">입력 개수 : 0개</div>
-            <b>입력된 숫자</b>
+            <b>입력된 금액</b>
             <div id="numbers">아직 없습니다.</div>
         </div>
 
