@@ -1,7 +1,11 @@
 name: Generate Stamp Keywords
 
 on:
-  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Update Stamp Data
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -9,6 +13,8 @@ permissions:
 jobs:
 
   generate:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     runs-on: ubuntu-latest
 
     steps:
@@ -28,39 +34,45 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-          # 한 번 실행할 때 처리할 우표 수
           BATCH_SIZE: "20"
-
-          # API 요청 간 대기시간
           REQUEST_DELAY: "1000"
-
-          # API 오류 재시도
           MAX_RETRIES: "3"
 
         run: |
           node scripts/generate-keywords.js
 
-      - name: Show result
+      - name: Validate keywords
         run: |
+          node - <<'NODE'
+          const fs = require("fs");
 
-          echo "===== 결과 ====="
+          const data = JSON.parse(
+            fs.readFileSync("stamp-data.json", "utf8")
+          );
 
-          echo "전체 우표:"
-          node -e "const d=require('./stamp-data.json'); console.log(d.length)"
+          if (!Array.isArray(data)) {
+            throw new Error("stamp-data.json이 배열이 아닙니다.");
+          }
 
-          echo "키워드 생성 완료:"
-          node -e "const d=require('./stamp-data.json'); console.log(d.filter(x => Array.isArray(x.keywords) && x.keywords.length > 0).length)"
+          const completed = data.filter(
+            stamp =>
+              Array.isArray(stamp.keywords) &&
+              stamp.keywords.length > 0
+          );
 
-          echo "키워드 미생성:"
-          node -e "const d=require('./stamp-data.json'); console.log(d.filter(x => !Array.isArray(x.keywords) || x.keywords.length === 0).length)"
+          console.log(`전체 우표: ${data.length}`);
+          console.log(`키워드 생성 완료: ${completed.length}`);
+          console.log(`키워드 미생성: ${data.length - completed.length}`);
 
-      - name: Commit updated keywords
+          if (completed.length === 0) {
+            throw new Error("생성된 키워드가 없습니다.");
+          }
+          NODE
+
+      - name: Commit keywords
         run: |
-
           git config user.name "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add stamp-data.json
 

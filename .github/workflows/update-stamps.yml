@@ -7,7 +7,6 @@ permissions:
   contents: write
 
 jobs:
-
   crawl:
     runs-on: ubuntu-latest
 
@@ -24,30 +23,56 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Test K-stamp connection
+        run: |
+          echo "========================================"
+          echo "K-stamp 연결 테스트"
+          echo "========================================"
+
+          echo ""
+          echo "===== DNS ====="
+          getent hosts stamp.epost.go.kr || true
+
+          echo ""
+          echo "===== HTTPS ====="
+
+          curl -I \
+            --connect-timeout 15 \
+            --max-time 30 \
+            https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp
+
       - name: Crawl K-stamp
         env:
           MAX_PAGES: "2"
           CONCURRENCY: "1"
           REQUEST_DELAY: "1500"
+          MAX_RETRIES: "3"
         run: node scripts/crawl-stamps.js
 
-      - name: Show result
+      - name: Validate stamp data
         run: |
-          echo "===== stamp-data.json ====="
+          node - <<'NODE'
+          const fs = require("fs");
 
-          echo "파일 크기:"
-          wc -c stamp-data.json
+          const data = JSON.parse(
+            fs.readFileSync("stamp-data.json", "utf8")
+          );
 
-          echo "우표 개수:"
-          node -e "const d=require('./stamp-data.json'); console.log(d.length)"
+          if (!Array.isArray(data)) {
+            throw new Error("stamp-data.json이 배열이 아닙니다.");
+          }
 
-      - name: Commit updated data
+          if (data.length === 0) {
+            throw new Error("수집된 우표 데이터가 없습니다.");
+          }
+
+          console.log(`우표 데이터 ${data.length}개 확인`);
+          NODE
+
+      - name: Commit stamp data
         run: |
-
           git config user.name "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add stamp-data.json
 
