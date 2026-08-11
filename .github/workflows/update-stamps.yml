@@ -1,47 +1,39 @@
 name: Update Stamp Data
 
 on:
-
   workflow_dispatch:
 
-  schedule:
-    - cron: "0 0 1 * *"
-
+permissions:
+  contents: write
 
 jobs:
-
-  update-stamps:
-
+  crawl:
     runs-on: ubuntu-latest
 
-
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
+          node-version: 24
 
       - name: Install dependencies
         run: npm install
 
-
       - name: Crawl K-stamp
         run: node scripts/crawl-stamps.js
 
+      - name: Show result
+        run: |
+          echo "===== stamp-data.json ====="
+          cat stamp-data.json
 
       - name: Commit updated data
         run: |
-
           git config user.name "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add stamp-data.json
 
