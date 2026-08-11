@@ -25,8 +25,8 @@ jobs:
       - name: Generate AI keywords
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BATCH_SIZE: "20"
-          REQUEST_DELAY: "1000"
+          BATCH_SIZE: "1000"
+          REQUEST_DELAY: "3000"
           MAX_RETRIES: "3"
         run: node scripts/generate-keywords.js
 
