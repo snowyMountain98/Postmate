@@ -23,7 +23,8 @@ jobs:
         run: npm install
 
       - name: Crawl K-stamp
-        env: GITHUB_TOKEN: ${{ secrets.MODELS_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.MODELS_TOKEN }}
         run: node scripts/crawl-stamps.js
 
       - name: Show result
