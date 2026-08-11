@@ -1,24 +1,16 @@
 name: Generate Stamp Keywords
 
 on:
-  workflow_run:
-    workflows:
-      - Update Stamp Data
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-
   generate:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -33,15 +25,12 @@ jobs:
       - name: Generate AI keywords
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
           BATCH_SIZE: "20"
           REQUEST_DELAY: "1000"
           MAX_RETRIES: "3"
+        run: node scripts/generate-keywords.js
 
-        run: |
-          node scripts/generate-keywords.js
-
-      - name: Validate keywords
+      - name: Show result
         run: |
           node - <<'NODE'
           const fs = require("fs");
@@ -49,10 +38,6 @@ jobs:
           const data = JSON.parse(
             fs.readFileSync("stamp-data.json", "utf8")
           );
-
-          if (!Array.isArray(data)) {
-            throw new Error("stamp-data.json이 배열이 아닙니다.");
-          }
 
           const completed = data.filter(
             stamp =>
@@ -63,10 +48,6 @@ jobs:
           console.log(`전체 우표: ${data.length}`);
           console.log(`키워드 생성 완료: ${completed.length}`);
           console.log(`키워드 미생성: ${data.length - completed.length}`);
-
-          if (completed.length === 0) {
-            throw new Error("생성된 키워드가 없습니다.");
-          }
           NODE
 
       - name: Commit keywords

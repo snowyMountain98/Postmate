@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -23,27 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Test K-stamp connection
-        run: |
-          echo "========================================"
-          echo "K-stamp 연결 테스트"
-          echo "========================================"
-
-          echo ""
-          echo "===== DNS ====="
-          getent hosts stamp.epost.go.kr || true
-
-          echo ""
-          echo "===== HTTPS ====="
-
-          curl -I \
-            --connect-timeout 15 \
-            --max-time 30 \
-            https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp
-
       - name: Crawl K-stamp
         env:
-          MAX_PAGES: "2"
           CONCURRENCY: "1"
           REQUEST_DELAY: "1500"
           MAX_RETRIES: "3"

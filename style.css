@@ -4,16 +4,15 @@
     src: url('./fonts/DungGeunMo.ttf');
 }
 
+/* =========================================================
+기본 설정
+========================================================= */
 
-/* =========================
-   기본 설정
-========================= */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
-
 
 body {
     font-family: 'DungGeunMo', sans-serif;
@@ -24,28 +23,29 @@ body {
     image-rendering: pixelated;
 }
 
-/* =========================
-   전체 영역
-========================= */
 .container {
     max-width: 520px;
-    margin: auto;
+    margin: 0 auto;
 }
 
-/* =========================
-   제목
-========================= */
+/* =========================================================
+제목
+========================================================= */
+
 h1 {
     text-align: center;
     font-size: 44px;
     color: #5B4B8A;
     margin-bottom: 30px;
-    text-shadow: 4px 4px 0px #FFD6E0;
+
+    text-shadow: 4px 4px 0 #FFD6E0;
+
 }
 
-/* =========================
-   입력 영역
-========================= */
+/* =========================================================
+입력 영역
+========================================================= */
+
 label {
     display: block;
     font-size: 24px;
@@ -53,46 +53,47 @@ label {
     margin-bottom: 10px;
 }
 
-/* 입력창 */
 input {
     width: 100%;
     padding: 18px;
-    font-family: 'DungGeunMo';
+    font-family: 'DungGeunMo', sans-serif;
     font-size: 28px;
     color: #4B4453;
     background: #FFFFFF;
     border: 4px solid #8BD3DD;
     outline: none;
-    box-shadow: 6px 6px 0px #5AA9B8;
+    box-shadow: 6px 6px 0 #5AA9B8;
 }
 
 input:focus {
     border-color: #FFB5E8;
-    box-shadow: 6px 6px 0px #D65DB1;
+    box-shadow: 6px 6px 0 #D65DB1;
 }
 
-/* =========================
-   버튼
-========================= */
+/* =========================================================
+버튼
+========================================================= */
+
 button {
-    font-family: 'DungGeunMo';
+    font-family: 'DungGeunMo', sans-serif;
     font-size: 22px;
     padding: 16px;
     border: 4px solid #4B4453;
-    background: white;
+    background: #FFFFFF;
     color: #4B4453;
     cursor: pointer;
-    box-shadow: 6px 6px 0px #4B4453;
+    box-shadow: 6px 6px 0 #4B4453;
     transition: 0.1s;
 }
 
-/* 클릭 */
 button:active {
     transform: translate(4px, 4px);
-    box-shadow: 2px 2px 0px #4B4453;
+    box-shadow: 2px 2px 0 #4B4453;
 }
 
-/* 버튼 줄 */
+/* =========================================================
+숫자 버튼
+========================================================= */
 .button-row {
     display: flex;
     gap: 12px;
@@ -108,7 +109,7 @@ button:active {
     background: #B8F2E6;
 }
 
-/* 마지막 삭제 */
+/* 마지막 숫자 삭제 */
 #deleteBtn {
     background: #FFD6A5;
 }
@@ -120,15 +121,15 @@ button:active {
     background: #FFADAD;
 }
 
-/* =========================
-   정보 카드
-========================= */
+/* =========================================================
+정보 카드
+========================================================= */
 .box {
     margin-top: 30px;
     padding: 20px;
     background: #FFFFFF;
     border: 5px solid #4B4453;
-    box-shadow: 8px 8px 0px #4B4453;
+    box-shadow: 8px 8px 0 #4B4453;
 }
 
 .box b {
@@ -144,9 +145,9 @@ button:active {
     margin-bottom: 15px;
 }
 
-/* =========================
-   숫자 Chip
-========================= */
+/* =========================================================
+숫자 Chip
+========================================================= */
 #numbers {
     display: flex;
     flex-wrap: wrap;
@@ -157,33 +158,32 @@ button:active {
     padding: 10px 16px;
     background: #CDEAC0;
     border: 3px solid #4B4453;
-    box-shadow: 4px 4px 0px #4B4453;
+    box-shadow: 4px 4px 0 #4B4453;
     font-size: 24px;
 }
 
-/* =========================
-   결과 화면
-========================= */
+/* =========================================================
+결과 화면
+========================================================= */
 #result {
     min-height: 100px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     text-align: center;
     font-size: 32px;
-    color: #5B4B8A;
     line-height: 1.5;
+    color: #5B4B8A;
 }
 
 /* 결과 성공 효과 */
 .success {
-    animation:
-        clearAnimation 0.4s;
+    animation: clearAnimation 0.4s;
 }
 
 @keyframes clearAnimation {
     0% {
-        transform: scale(.7);
+        transform: scale(0.7);
     }
 
     50% {
@@ -195,49 +195,9 @@ button:active {
     }
 }
 
-/* =========================
-   모바일 최적화
-========================= */
-@media(max-width:600px) {
-    body {
-        padding: 18px;
-    }
-
-    h1 {
-        font-size: 36px;
-    }
-
-    label {
-        font-size: 22px;
-    }
-
-    input {
-        font-size: 26px;
-    }
-
-    button {
-        font-size: 20px;
-        padding: 15px;
-    }
-
-    .box {
-        padding: 16px;
-        box-shadow: 6px 6px 0px #4B4453;
-    }
-
-    .number-chip {
-        font-size: 22px;
-    }
-
-    #result {
-        font-size: 26px;
-    }
-
-}
-
-/* =========================
-    공통 Header
-========================= */
+/* =========================================================
+공통 Header
+========================================================= */
 .top-nav {
     max-width: 520px;
     margin: 0 auto 20px;
@@ -275,9 +235,10 @@ button:active {
     background: #B8F2E6;
 }
 
-/* =========================
-    우표 검색 화면
-========================= */
+/* =========================================================
+우표 검색 - 제목
+========================================================= */
+
 .search-title {
     text-align: center;
     font-size: 36px;
@@ -286,6 +247,9 @@ button:active {
     text-shadow: 3px 3px 0 #FFD6E0;
 }
 
+/* =========================================================
+우표 검색 - 검색창
+========================================================= */
 .search-box {
     display: flex;
     gap: 10px;
@@ -324,11 +288,19 @@ button:active {
     box-shadow: 2px 2px 0 #4B4453;
 }
 
+/* =========================================================
+우표 검색 - 검색 결과 정보
+========================================================= */
+
 .search-info {
-    margin: 12px 0 12px;
+    margin: 12px 0;
     font-size: 18px;
     color: #777;
 }
+
+/* =========================================================
+우표 검색 - 관련 키워드
+========================================================= */
 
 .related-keywords {
     display: flex;
@@ -341,7 +313,7 @@ button:active {
     padding: 8px 12px;
     font-family: 'DungGeunMo', sans-serif;
     font-size: 17px;
-    background: #FFF;
+    background: #FFFFFF;
     border: 3px solid #4B4453;
     box-shadow: 3px 3px 0 #4B4453;
     cursor: pointer;
@@ -352,75 +324,228 @@ button:active {
     box-shadow: 1px 1px 0 #4B4453;
 }
 
+/* =========================================================
+우표 검색 - 목록
+========================================================= */
 .stamp-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
+/* =========================================================
+우표 검색 - 카드
+========================================================= */
 .stamp-card {
-    padding: 18px;
+    width: 100%;
+    padding: 16px;
     background: #FFFFFF;
     border: 4px solid #4B4453;
     box-shadow: 6px 6px 0 #4B4453;
 }
 
-.stamp-card h2 {
+/* =========================================================
+우표 카드 - 이미지 + 정보
+========================================================= */
+.stamp-card-content {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+/* 우표 이미지 */
+.stamp-image-wrap {
+    width: 110px;
+    min-width: 110px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.stamp-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: auto;
+}
+
+/* 이미지가 없는 경우 */
+.stamp-image-empty {
+    font-size: 32px;
+}
+
+/* =========================================================
+우표 카드 - 정보
+========================================================= */
+.stamp-info {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 우표 제목 */
+.stamp-title {
+    margin: 0 0 8px;
     font-size: 24px;
-    margin-bottom: 10px;
     color: #5B4B8A;
+    line-height: 1.3;
 }
 
-.stamp-date {
-    margin-bottom: 6px;
+/* 디자인 */
+.stamp-design {
+    margin-bottom: 8px;
     font-size: 17px;
     color: #777;
 }
 
-.stamp-value {
-    margin-bottom: 10px;
-    font-size: 17px;
-    color: #777;
+/* 발행일 / 액면가 / 크기 */
+.stamp-meta {
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+
 }
 
-.stamp-description {
-    font-size: 18px;
-    line-height: 1.5;
+.stamp-date,
+.stamp-value,
+.stamp-size {
+    font-size: 17px;
+
+    color: #777;
+
 }
+
+/* =========================================================
+우표 카드 - 태그
+카드 전체 너비 사용
+========================================================= */
 
 .stamp-tags {
+    width: 100%;
+
     display: flex;
     flex-wrap: wrap;
+
     gap: 6px;
+
     margin-top: 14px;
+    padding-top: 12px;
+
+    border-top: 1px dashed rgba(0, 0, 0, 0.15);
+
 }
 
 .stamp-tag {
-    padding: 5px 8px;
+    display: inline-block;
+
+    padding: 5px 9px;
+
+    font-size: 12px;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
     background: #CDEAC0;
+
     border: 2px solid #4B4453;
-    font-size: 15px;
+
+    box-sizing: border-box;
+
 }
+
+/* =========================================================
+우표 검색 - 상태 화면
+========================================================= */
 
 .no-result {
     padding: 30px 15px;
+
     text-align: center;
+
     background: #FFFFFF;
+
     border: 4px solid #4B4453;
+
     box-shadow: 6px 6px 0 #4B4453;
+
     font-size: 20px;
+
 }
 
 .loading {
     padding: 25px;
+
     text-align: center;
+
     font-size: 20px;
+
 }
 
+/* =========================================================
+모바일 최적화
+========================================================= */
+
 @media (max-width: 600px) {
+
+    body {
+        padding: 18px;
+    }
+
+
+    /* 기본 */
+
+    h1 {
+        font-size: 36px;
+    }
+
+    label {
+        font-size: 22px;
+    }
+
+    input {
+        font-size: 26px;
+    }
+
+    button {
+        font-size: 20px;
+
+        padding: 15px;
+    }
+
+
+    /* 정보 카드 */
+
+    .box {
+        padding: 16px;
+
+        box-shadow: 6px 6px 0 #4B4453;
+    }
+
+
+    /* 숫자 */
+
+    .number-chip {
+        font-size: 22px;
+    }
+
+    #result {
+        font-size: 26px;
+    }
+
+
+    /* 검색 제목 */
+
     .search-title {
         font-size: 30px;
     }
+
+
+    /* 검색창 */
 
     .search-input {
         font-size: 20px;
@@ -428,44 +553,63 @@ button:active {
 
     .search-button {
         font-size: 18px;
+
         padding: 10px 14px;
     }
-}
 
-/* ========================================
-   우표 검색 카드
-======================================== */
-.stamp-card-content {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-}
 
-/* 우표 이미지 크기 */
-.stamp-image-wrap {
-    width: 110px;
-    min-width: 110px;
-    height: 110px;
+    /* 우표 카드 */
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    .stamp-card {
+        padding: 14px;
+    }
 
-    overflow: hidden;
-}
+    .stamp-card-content {
+        gap: 14px;
+    }
 
-.stamp-image {
-    display: block;
 
-    width: 100%;
-    height: 100%;
+    /* 우표 이미지 */
 
-    object-fit: contain;
+    .stamp-image-wrap {
+        width: 90px;
+        min-width: 90px;
 
-    image-rendering: auto;
-}
+        height: 90px;
+    }
 
-/* 이미지가 없을 때 */
-.stamp-image-empty {
-    font-size: 32px;
+
+    /* 우표 제목 */
+
+    .stamp-title {
+        font-size: 21px;
+    }
+
+
+    /* 우표 정보 */
+
+    .stamp-date,
+    .stamp-value,
+    .stamp-size,
+    .stamp-design {
+        font-size: 15px;
+    }
+
+
+    /* 태그 */
+
+    .stamp-tags {
+        gap: 5px;
+
+        margin-top: 12px;
+        padding-top: 10px;
+    }
+
+    .stamp-tag {
+        padding: 4px 7px;
+
+        font-size: 12px;
+    }
+
+
 }
