@@ -1119,22 +1119,31 @@ async function main() {
 
 
         // ==================================================
-        // 5. ID 기준 중복 제거
+        // 제목 기준 중복 제거
         // ==================================================
 
         const stampMap =
             new Map();
 
-
         validStamps.forEach(
             stamp => {
 
-                if (
-                    stamp.id
-                ) {
+                if (!stamp.title) {
+                    return;
+                }
+
+                const title =
+                    stamp.title.trim();
+
+                /*
+                 * 같은 제목이 이미 있으면
+                 * 먼저 수집된 데이터를 유지한다.
+                 */
+
+                if (!stampMap.has(title)) {
 
                     stampMap.set(
-                        stamp.id,
+                        title,
                         stamp
                     );
 

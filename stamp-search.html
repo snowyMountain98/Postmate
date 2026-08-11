@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 
 <head>
@@ -9,146 +10,452 @@
 </head>
 
 <body>
+
+    ```
     <div id="header"></div>
 
     <div class="container">
+
         <h1 class="search-title">📮 우표 검색</h1>
 
         <div class="search-box">
             <input id="searchInput" class="search-input" type="text" inputmode="search" placeholder="우표를 검색해보세요"
                 autocomplete="off">
-            <button type="button" class="search-button" onclick="searchStamps()">🔍 검색</button>
+
+            <button type="button" class="search-button" onclick="searchStamps()">
+                🔍 검색
+            </button>
         </div>
 
-        <div id="searchInfo" class="search-info">우표 데이터를 불러오는 중...</div>
+        <div id="searchInfo" class="search-info">
+            우표 데이터를 불러오는 중...
+        </div>
 
         <div id="relatedKeywords" class="related-keywords"></div>
+
         <div id="stampList" class="stamp-list">
-            <div class="loading">📮 우표 정보를 불러오는 중...</div>
+            <div class="loading">
+                📮 우표 정보를 불러오는 중...
+            </div>
         </div>
+
     </div>
 
+
     <script>
+
         let stamps = [];
 
+
+        // ========================================
+        // 우표 데이터 불러오기
+        // ========================================
+
         async function loadStamps() {
+
             try {
-                const response = await fetch("./stamp-data.json");
+
+                const response =
+                    await fetch("./stamp-data.json");
 
                 if (!response.ok) {
-                    throw new Error("stamp-data.json을 불러오지 못했습니다.");
+                    throw new Error(
+                        "stamp-data.json을 불러오지 못했습니다."
+                    );
                 }
 
                 stamps = await response.json();
 
                 displayStamps(stamps);
+
                 showRelatedKeywords();
 
             } catch (error) {
+
                 console.error(error);
 
-                document.getElementById("searchInfo").textContent = "우표 데이터를 불러오지 못했어요.";
+                document.getElementById(
+                    "searchInfo"
+                ).textContent =
+                    "우표 데이터를 불러오지 못했어요.";
 
-                document.getElementById("stampList").innerHTML = '<div class="no-result">stamp-data.json 파일이 같은 폴더에 있는지 확인해주세요.</div>';
+                document.getElementById(
+                    "stampList"
+                ).innerHTML =
+                    '<div class="no-result">' +
+                    'stamp-data.json 파일이 같은 폴더에 있는지 확인해주세요.' +
+                    '</div>';
+
             }
+
         }
 
-        function searchStamps() {
-            const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
 
+        // ========================================
+        // 우표 검색
+        // ========================================
+
+        function searchStamps() {
+
+            const keyword =
+                document
+                    .getElementById("searchInput")
+                    .value
+                    .trim()
+                    .toLowerCase();
+
+
+            // 검색어가 없으면 전체 표시
             if (!keyword) {
+
                 displayStamps(stamps);
+
                 return;
             }
 
-            const results = stamps.filter(stamp => {
-                const searchableText = [
-                    stamp.title,
-                    stamp.date,
-                    stamp.faceValue,
-                    stamp.description,
-                    ...stamp.keywords
-                ].join(" ").toLowerCase();
 
-                return searchableText.includes(keyword);
-            });
+            const results =
+                stamps.filter(stamp => {
+
+                    /*
+                     * description은 검색에서 제외
+                     *
+                     * 검색 대상
+                     * - 제목
+                     * - 디자인
+                     * - 발행일
+                     * - 액면가
+                     * - 크기
+                     * - AI 키워드
+                     */
+
+                    const searchableText = [
+
+                        stamp.title || "",
+
+                        stamp.design || "",
+
+                        stamp.issueDate || "",
+
+                        stamp.faceValue || "",
+
+                        stamp.size || "",
+
+                        ...(Array.isArray(stamp.keywords)
+                            ? stamp.keywords
+                            : [])
+
+                    ]
+                        .join(" ")
+                        .toLowerCase();
+
+
+                    return searchableText.includes(keyword);
+
+                });
+
 
             displayStamps(results);
+
         }
 
+
+        // ========================================
+        // 우표 목록 표시
+        // ========================================
+
         function displayStamps(results) {
-            const list = document.getElementById("stampList");
-            const info = document.getElementById("searchInfo");
-            const keyword = document.getElementById("searchInput").value.trim();
+
+            const list =
+                document.getElementById("stampList");
+
+            const info =
+                document.getElementById("searchInfo");
+
+            const keyword =
+                document
+                    .getElementById("searchInput")
+                    .value
+                    .trim();
+
 
             list.innerHTML = "";
 
+
+            // 검색 결과 문구
+
             if (keyword) {
-                info.textContent = `"${keyword}" 검색 결과 ${results.length}개`;
+
+                info.textContent =
+                    `"${keyword}" 검색 결과 ${results.length}개`;
+
             } else {
-                info.textContent = `전체 우표 ${results.length}개`;
+
+                info.textContent =
+                    `전체 우표 ${results.length}개`;
+
             }
+
+
+            // 검색 결과 없음
 
             if (results.length === 0) {
-                list.innerHTML = '<div class="no-result">🔎 검색 결과가 없어요.<br><br>다른 검색어를 입력해보세요.</div>';
+
+                list.innerHTML =
+                    '<div class="no-result">' +
+                    '🔎 검색 결과가 없어요.' +
+                    '<br><br>' +
+                    '다른 검색어를 입력해보세요.' +
+                    '</div>';
+
                 return;
+
             }
+
+
+            // 우표 카드 생성
 
             results.forEach(stamp => {
-                const card = document.createElement("div");
-                card.className = "stamp-card";
 
-                const tags = stamp.keywords.map(keyword => `<span class="stamp-tag">#${keyword}</span>`).join("");
+                const card =
+                    document.createElement("div");
 
-                card.innerHTML = `<h2>${stamp.title}</h2>` +
-                    `<div class="stamp-date">발행일 : ${stamp.date}</div>` +
-                    `<div class="stamp-value">액면가격 : ${stamp.faceValue}</div>` +
-                    `<div class="stamp-description">${stamp.description}</div>` +
-                    `<div class="stamp-tags">${tags}</div>`;
+                card.className =
+                    "stamp-card";
+
+
+                // 이미지
+
+                const image =
+                    stamp.image
+                        ? `
+                        <div class="stamp-image-wrap">
+                            <img
+                                src="${escapeHtml(stamp.image)}"
+                                alt="${escapeHtml(stamp.title || "우표")}"
+                                class="stamp-image"
+                                loading="lazy"
+                                onerror="this.parentElement.style.display='none';"
+                            >
+                        </div>
+                    `
+                        : `
+                        <div class="stamp-image-wrap stamp-image-empty">
+                            📮
+                        </div>
+                    `;
+
+
+                // 키워드
+
+                const keywords =
+                    Array.isArray(stamp.keywords)
+                        ? stamp.keywords
+                        : [];
+
+
+                const tags =
+                    keywords
+                        .slice(0, 10)
+                        .map(keyword =>
+                            `<span class="stamp-tag">#${escapeHtml(keyword)}</span>`
+                        )
+                        .join("");
+
+
+                // 카드
+
+                card.innerHTML = `
+
+                <div class="stamp-card-content">
+
+                    ${image}
+
+                    <div class="stamp-info">
+
+                        <h2 class="stamp-title">
+                            ${escapeHtml(stamp.title || "제목 없음")}
+                        </h2>
+
+                        ${stamp.design
+                        ? `
+                                    <div class="stamp-design">
+                                        ${escapeHtml(stamp.design)}
+                                    </div>
+                                `
+                        : ""
+                    }
+
+                        <div class="stamp-meta">
+
+                            ${stamp.issueDate
+                        ? `
+                                        <div class="stamp-date">
+                                            📅 ${escapeHtml(stamp.issueDate)}
+                                        </div>
+                                    `
+                        : ""
+                    }
+
+                            ${stamp.faceValue
+                        ? `
+                                        <div class="stamp-value">
+                                            💰 ${escapeHtml(stamp.faceValue)}
+                                        </div>
+                                    `
+                        : ""
+                    }
+
+                            ${stamp.size
+                        ? `
+                                        <div class="stamp-size">
+                                            📐 ${escapeHtml(stamp.size)}
+                                        </div>
+                                    `
+                        : ""
+                    }
+
+                        </div>
+
+                        ${tags
+                        ? `
+                                    <div class="stamp-tags">
+                                        ${tags}
+                                    </div>
+                                `
+                        : ""
+                    }
+
+                    </div>
+
+                </div>
+
+            `;
+
 
                 list.appendChild(card);
+
             });
 
+
+            // 검색 결과가 있으면 결과 위치로 이동
+
             if (keyword) {
+
                 list.scrollIntoView({
+
                     behavior: "smooth",
+
                     block: "start"
+
                 });
+
             }
+
         }
+
+
+        // ========================================
+        // 관련 키워드
+        // ========================================
 
         function showRelatedKeywords() {
-            const container = document.getElementById("relatedKeywords");
+
+            const container =
+                document.getElementById(
+                    "relatedKeywords"
+                );
 
             container.innerHTML = "";
+
         }
 
-        document.getElementById("searchInput").addEventListener("keydown", function (event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                searchStamps();
-            }
-        });
+
+        // ========================================
+        // HTML 특수문자 처리
+        // ========================================
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        }
+
+
+        // ========================================
+        // Enter 검색
+        // ========================================
+
+        document
+            .getElementById("searchInput")
+            .addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (event.key === "Enter") {
+
+                        event.preventDefault();
+
+                        searchStamps();
+
+                    }
+
+                }
+            );
+
+
+        // ========================================
+        // 공통 Header
+        // ========================================
 
         async function loadHeader() {
+
             try {
-                const response = await fetch("./header.html");
+
+                const response =
+                    await fetch("./header.html");
 
                 if (!response.ok) {
-                    throw new Error("header.html을 불러오지 못했습니다.");
+
+                    throw new Error(
+                        "header.html을 불러오지 못했습니다."
+                    );
+
                 }
 
-                const data = await response.text();
-                document.getElementById("header").innerHTML = data;
+                const data =
+                    await response.text();
+
+                document.getElementById(
+                    "header"
+                ).innerHTML = data;
+
 
             } catch (error) {
+
                 console.error(error);
+
             }
+
         }
 
+
+        // ========================================
+        // 초기 실행
+        // ========================================
+
         loadHeader();
+
         loadStamps();
+
     </script>
+    ```
+
 </body>
 
 </html>
