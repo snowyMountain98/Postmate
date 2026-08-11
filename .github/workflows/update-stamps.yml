@@ -1,0 +1,29 @@
+name: Test Stamp Crawler
+
+on:
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Crawl K-stamp
+        run: node scripts/crawl-stamps.js
+
+      - name: Show result
+        run: |
+          echo "===== stamp-data.json ====="
+          cat stamp-data.json
