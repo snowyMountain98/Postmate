@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우표 검색 - Postmate</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body>
+
+
+    <!-- 공통 Header -->
+
+    <div id="header"></div>
+
+    <div class="container">
+        <h1 class="search-title">📮 우표 검색</h1>
+
+        <!-- 검색창 -->
+        <div class="search-box">
+            <input id="searchInput" class="search-input" type="text" inputmode="search" placeholder="우표를 검색해보세요"
+                autocomplete="off">
+            <button type="button" class="search-button" onclick="searchStamps()">🔍 검색</button>
+        </div>
+
+        <!-- 검색 결과 안내 -->
+        <div id="searchInfo" class="search-info">전체 우표를 검색할 수 있어요.</div>
+
+        <!-- 관련 검색어 -->
+        <div id="relatedKeywords" class="related-keywords"></div>
+
+        <!-- 검색 결과 -->
+        <div id="stampList" class="stamp-list"></div>
+    </div>
+
+    <script>
+        /*
+         * =========================
+         * 임시 우표 데이터
+         * =========================
+         *
+         * 지금은 화면과 검색 기능을
+         * 테스트하기 위한 데이터입니다.
+         *
+         * 실제 데이터는 다음 단계에서
+         * 별도의 JSON으로 분리합니다.
+         */
+
+        const stamps = [
+
+            {
+                title: "우리나라의 과일 - 사과",
+
+                date: "2020.05.01",
+
+                description:
+                    "우리나라에서 많이 재배되는 사과를 소재로 한 우표입니다.",
+
+                keywords: [
+                    "과일",
+                    "사과",
+                    "농산물",
+                    "식물"
+                ]
+            },
+
+
+            {
+                title: "제주 감귤",
+
+                date: "2019.11.15",
+
+                description:
+                    "제주도의 대표적인 특산물인 감귤을 소재로 한 우표입니다.",
+
+                keywords: [
+                    "과일",
+                    "감귤",
+                    "제주",
+                    "특산물"
+                ]
+            },
+
+
+            {
+                title: "아름다운 우리 꽃 - 벚꽃",
+
+                date: "2021.04.01",
+
+                description:
+                    "봄을 대표하는 벚꽃을 소재로 한 우표입니다.",
+
+                keywords: [
+                    "꽃",
+                    "벚꽃",
+                    "식물",
+                    "봄"
+                ]
+            },
+
+
+            {
+                title: "우리의 동물 - 호랑이",
+
+                date: "2022.08.15",
+
+                description:
+                    "우리나라를 대표하는 동물인 호랑이를 소재로 한 우표입니다.",
+
+                keywords: [
+                    "동물",
+                    "호랑이",
+                    "한국",
+                    "야생동물"
+                ]
+            },
+
+
+            {
+                title: "한국의 새 - 두루미",
+
+                date: "2023.02.10",
+
+                description:
+                    "우리나라에서 볼 수 있는 두루미를 소재로 한 우표입니다.",
+
+                keywords: [
+                    "동물",
+                    "새",
+                    "두루미",
+                    "자연"
+                ]
+            }
+
+        ];
+
+
+        /*
+         * =========================
+         * 검색
+         * =========================
+         */
+        function searchStamps() {
+            const input = document.getElementById("searchInput");
+
+            const keyword = input.value.trim().toLowerCase();
+
+            /*
+             * 검색어가 없으면 전체 표시
+             */
+
+            if (!keyword) {
+                displayStamps(stamps);
+                return;
+            }
+
+            /*
+             * 제목 + 설명 + 키워드 검색
+             */
+            const results =
+                stamps.filter(stamp => {
+                    const searchableText = [
+                        stamp.title,
+                        stamp.description,
+                        ...stamp.keywords
+                    ]
+                        .join(" ")
+                        .toLowerCase();
+                    return searchableText.includes(keyword);
+                });
+            displayStamps(results);
+        }
+
+
+        /*
+         * =========================
+         * 결과 출력
+         * =========================
+         */
+        function displayStamps(results) {
+            const list = document.getElementById("stampList");
+            const info = document.getElementById("searchInfo");
+
+            list.innerHTML = "";
+            const keyword = document.getElementById("searchInput").value.trim();
+
+            if (keyword) {
+                info.textContent = '"${keyword}" 검색 결과 ${results.length}개';
+            } else {
+                info.textContent = '전체 우표 ${results.length}개';
+            }
+
+            /*
+             * 검색 결과 없음
+             */
+            if (results.length === 0) {
+                list.innerHTML = '<div class="no-result">🔎 검색 결과가 없어요.<br><br>다른 검색어를 입력해보세요.</div>';
+                return;
+            }
+
+            /*
+             * 우표 카드 생성
+             */
+            results.forEach(stamp => {
+                const card = document.createElement("div");
+                card.className = "stamp-card";
+
+                const tags = stamp.keywords.map(keyword => {
+                    return '<span class="stamp-tag">#${keyword}</span>';
+                }).join("");
+
+                card.innerHTML = '<h2>${stamp.title}</h2><div class="stamp-date">발행일 : ${stamp.date}</div><div class="stamp-description">${stamp.description}</div><div class="stamp-tags">${tags}</div>';
+
+                list.appendChild(card);
+            });
+
+            /*
+             * 결과 화면으로 이동
+             */
+            if (keyword) {
+                list.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        }
+
+        /*
+         * =========================
+         * 관련 검색어
+         * =========================
+         */
+        function showRelatedKeywords() {
+            const keywords = [
+                "과일",
+                "꽃",
+                "동물",
+                "한국",
+                "자연"
+            ];
+
+            const container = document.getElementById("relatedKeywords");
+
+            container.innerHTML = "";
+
+            keywords.forEach(keyword => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "keyword-button";
+                button.textContent = keyword;
+
+                button.onclick = function () {
+                    document.getElementById("searchInput").value = keyword;
+                    searchStamps();
+                };
+
+                container.appendChild(button);
+            });
+        }
+
+        /*
+         * =========================
+         * Enter 키 검색
+         * =========================
+         */
+        document.getElementById("searchInput").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchStamps();
+            }
+        });
+
+        /*
+         * =========================
+         * 초기 화면
+         * =========================
+         */
+
+        displayStamps(stamps);
+
+        showRelatedKeywords();
+
+        /*
+         * =========================
+         * Header 불러오기
+         * =========================
+         */
+
+        fetch("header.html").then(response => response.text()).then(data => {
+            document.getElementById("header").innerHTML = data;
+        }).catch(error => {
+            console.error("header.html을 불러오지 못했습니다.", error);
+        });
+    </script>
+</body>
+
+</html>

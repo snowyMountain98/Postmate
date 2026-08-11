@@ -274,3 +274,148 @@ button:active {
 .home-button {
     background: #B8F2E6;
 }
+
+/* =========================
+    우표 검색 화면
+========================= */
+.search-title {
+    text-align: center;
+    font-size: 36px;
+    color: #5B4B8A;
+    margin: 20px 0 25px;
+    text-shadow: 3px 3px 0 #FFD6E0;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 15px;
+    font-family: 'DungGeunMo', sans-serif;
+    font-size: 22px;
+    border: 4px solid #8BD3DD;
+    box-shadow: 5px 5px 0 #5AA9B8;
+    outline: none;
+}
+
+.search-input:focus {
+    border-color: #FFB5E8;
+    box-shadow: 5px 5px 0 #D65DB1;
+}
+
+.search-button {
+    flex-shrink: 0;
+    padding: 12px 18px;
+    font-family: 'DungGeunMo', sans-serif;
+    font-size: 20px;
+    border: 4px solid #4B4453;
+    background: #B8F2E6;
+    box-shadow: 5px 5px 0 #4B4453;
+    cursor: pointer;
+}
+
+.search-button:active {
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0 #4B4453;
+}
+
+.search-info {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #777;
+}
+
+.related-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 25px;
+}
+
+.keyword-button {
+    padding: 8px 12px;
+    font-family: 'DungGeunMo', sans-serif;
+    font-size: 17px;
+    background: #FFF;
+    border: 3px solid #4B4453;
+    box-shadow: 3px 3px 0 #4B4453;
+    cursor: pointer;
+}
+
+.keyword-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #4B4453;
+}
+
+.stamp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stamp-card {
+    padding: 18px;
+    background: #FFFFFF;
+    border: 4px solid #4B4453;
+    box-shadow: 6px 6px 0 #4B4453;
+}
+
+.stamp-card h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #5B4B8A;
+}
+
+.stamp-date {
+    margin-bottom: 10px;
+    font-size: 17px;
+    color: #777;
+}
+
+.stamp-description {
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+.stamp-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.stamp-tag {
+    padding: 5px 8px;
+    background: #CDEAC0;
+    border: 2px solid #4B4453;
+    font-size: 15px;
+}
+
+.no-result {
+    padding: 30px 15px;
+    text-align: center;
+    background: #FFFFFF;
+    border: 4px solid #4B4453;
+    box-shadow: 6px 6px 0 #4B4453;
+    font-size: 20px;
+}
+
+@media (max-width: 600px) {
+    .search-title {
+        font-size: 30px;
+    }
+
+    .search-input {
+        font-size: 20px;
+    }
+
+    .search-button {
+        font-size: 18px;
+        padding: 10px 14px;
+    }
+}
