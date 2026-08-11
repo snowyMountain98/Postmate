@@ -19,13 +19,13 @@ const OPENAI_MODEL = "gpt-5-mini";
 //
 // 기본값: 20
 const BATCH_SIZE = Number(
-    process.env.BATCH_SIZE || 20
+    process.env.BATCH_SIZE || 1000
 );
 
 // API 호출 사이 대기시간
 // 너무 빠르게 여러 요청을 보내지 않도록 함
 const REQUEST_DELAY = Number(
-    process.env.REQUEST_DELAY || 1000
+    process.env.REQUEST_DELAY || 3000
 );
 
 // API 오류 발생 시 재시도 횟수

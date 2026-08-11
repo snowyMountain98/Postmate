@@ -24,7 +24,8 @@ jobs:
 
       - name: Crawl K-stamp
         env:
-          CONCURRENCY: "1"
+          MAX_PAGES: "20"
+          CONCURRENCY: "5"
           REQUEST_DELAY: "1500"
           MAX_RETRIES: "3"
         run: node scripts/crawl-stamps.js
