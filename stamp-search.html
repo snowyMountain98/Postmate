@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우표 검색</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="header"></div>
+
+    <div class="container">
+        <h1 class="search-title">📮 우표 검색</h1>
+
+        <div class="search-box">
+            <input id="searchInput" class="search-input" type="text" inputmode="search" placeholder="우표를 검색해보세요"
+                autocomplete="off">
+            <button type="button" class="search-button" onclick="searchStamps()">🔍 검색</button>
+        </div>
+
+        <div id="searchInfo" class="search-info">우표 데이터를 불러오는 중...</div>
+
+        <div id="relatedKeywords" class="related-keywords"></div>
+        <div id="stampList" class="stamp-list">
+            <div class="loading">📮 우표 정보를 불러오는 중...</div>
+        </div>
+    </div>
+
+    <script>
+        let stamps = [];
+
+        const popularKeywords = [
+            "과일", "꽃", "동물", "인물", "역사",
+            "한국", "제주", "자연", "음식", "스포츠"
+        ];
+
+        async function loadStamps() {
+            try {
+                const response = await fetch("./stamp-data.json");
+
+                if (!response.ok) {
+                    throw new Error("stamp-data.json을 불러오지 못했습니다.");
+                }
+
+                stamps = await response.json();
+
+                displayStamps(stamps);
+                showRelatedKeywords();
+
+            } catch (error) {
+                console.error(error);
+
+                document.getElementById("searchInfo").textContent = "우표 데이터를 불러오지 못했어요.";
+
+                document.getElementById("stampList").innerHTML = '<div class="no-result">stamp-data.json 파일이 같은 폴더에 있는지 확인해주세요.</div>';
+            }
+        }
+
+        function searchStamps() {
+            const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+
+            if (!keyword) {
+                displayStamps(stamps);
+                return;
+            }
+
+            const results = stamps.filter(stamp => {
+                const searchableText = [
+                    stamp.title,
+                    stamp.date,
+                    stamp.faceValue,
+                    stamp.description,
+                    ...stamp.keywords
+                ].join(" ").toLowerCase();
+
+                return searchableText.includes(keyword);
+            });
+
+            displayStamps(results);
+        }
+
+        function displayStamps(results) {
+            const list = document.getElementById("stampList");
+            const info = document.getElementById("searchInfo");
+            const keyword = document.getElementById("searchInput").value.trim();
+
+            list.innerHTML = "";
+
+            if (keyword) {
+                info.textContent = '"${keyword}" 검색 결과 ${results.length}개';
+            } else {
+                info.textContent = '전체 우표 ${results.length}개';
+            }
+
+            if (results.length === 0) {
+                list.innerHTML = '<div class="no-result">🔎 검색 결과가 없어요.<br><br>다른 검색어를 입력해보세요.</div>';
+                return;
+            }
+
+            results.forEach(stamp => {
+                const card = document.createElement("div");
+                card.className = "stamp-card";
+
+                const tags = stamp.keywords.map(keyword => '<span class="stamp-tag">#${keyword}</span>').join("");
+
+                card.innerHTML = '<h2>${stamp.title}</h2>' +
+                    '<div class="stamp-date">발행일 : ${stamp.date}</div>' +
+                    '<div class="stamp-value">액면가격 : ${stamp.faceValue}</div>' +
+                    '<div class="stamp-description">${stamp.description}</div>' +
+                    '<div class="stamp-tags">${tags}</div>';
+
+                list.appendChild(card);
+            });
+
+            if (keyword) {
+                list.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        }
+
+        function showRelatedKeywords() {
+            const container = document.getElementById("relatedKeywords");
+
+            container.innerHTML = "";
+
+            popularKeywords.forEach(keyword => {
+                const button = document.createElement("button");
+
+                button.type = "button";
+                button.className = "keyword-button";
+                button.textContent = keyword;
+
+                button.onclick = function () {
+                    document.getElementById("searchInput").value = keyword;
+                    searchStamps();
+                };
+
+                container.appendChild(button);
+            });
+        }
+
+        document.getElementById("searchInput").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchStamps();
+            }
+        });
+
+        async function loadHeader() {
+            try {
+                const response = await fetch("./header.html");
+
+                if (!response.ok) {
+                    throw new Error("header.html을 불러오지 못했습니다.");
+                }
+
+                const data = await response.text();
+                document.getElementById("header").innerHTML = data;
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        loadHeader();
+        loadStamps();
+    </script>
+</body>
+
+</html>
