@@ -31,11 +31,6 @@
     <script>
         let stamps = [];
 
-        const popularKeywords = [
-            "과일", "꽃", "동물", "인물", "역사",
-            "한국", "제주", "자연", "음식", "스포츠"
-        ];
-
         async function loadStamps() {
             try {
                 const response = await fetch("./stamp-data.json");
@@ -89,9 +84,9 @@
             list.innerHTML = "";
 
             if (keyword) {
-                info.textContent = '"${keyword}" 검색 결과 ${results.length}개';
+                info.textContent = `"${keyword}" 검색 결과 ${results.length}개`;
             } else {
-                info.textContent = '전체 우표 ${results.length}개';
+                info.textContent = `전체 우표 ${results.length}개`;
             }
 
             if (results.length === 0) {
@@ -103,13 +98,13 @@
                 const card = document.createElement("div");
                 card.className = "stamp-card";
 
-                const tags = stamp.keywords.map(keyword => '<span class="stamp-tag">#${keyword}</span>').join("");
+                const tags = stamp.keywords.map(keyword => `<span class="stamp-tag">#${keyword}</span>`).join("");
 
-                card.innerHTML = '<h2>${stamp.title}</h2>' +
-                    '<div class="stamp-date">발행일 : ${stamp.date}</div>' +
-                    '<div class="stamp-value">액면가격 : ${stamp.faceValue}</div>' +
-                    '<div class="stamp-description">${stamp.description}</div>' +
-                    '<div class="stamp-tags">${tags}</div>';
+                card.innerHTML = `<h2>${stamp.title}</h2>` +
+                    `<div class="stamp-date">발행일 : ${stamp.date}</div>` +
+                    `<div class="stamp-value">액면가격 : ${stamp.faceValue}</div>` +
+                    `<div class="stamp-description">${stamp.description}</div>` +
+                    `<div class="stamp-tags">${tags}</div>`;
 
                 list.appendChild(card);
             });
@@ -126,21 +121,6 @@
             const container = document.getElementById("relatedKeywords");
 
             container.innerHTML = "";
-
-            popularKeywords.forEach(keyword => {
-                const button = document.createElement("button");
-
-                button.type = "button";
-                button.className = "keyword-button";
-                button.textContent = keyword;
-
-                button.onclick = function () {
-                    document.getElementById("searchInput").value = keyword;
-                    searchStamps();
-                };
-
-                container.appendChild(button);
-            });
         }
 
         document.getElementById("searchInput").addEventListener("keydown", function (event) {
