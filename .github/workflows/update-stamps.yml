@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -24,7 +25,7 @@ jobs:
 
       - name: Crawl K-stamp
         env:
-          GITHUB_TOKEN: ${{ secrets.MODELS_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/crawl-stamps.js
 
       - name: Show result
