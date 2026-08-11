@@ -7,6 +7,7 @@ permissions:
   contents: write
 
 jobs:
+
   crawl:
     runs-on: ubuntu-latest
 
@@ -25,22 +26,34 @@ jobs:
 
       - name: Crawl K-stamp
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MAX_PAGES: "2"
+          CONCURRENCY: "3"
+          REQUEST_DELAY: "500"
         run: node scripts/crawl-stamps.js
 
       - name: Show result
         run: |
           echo "===== stamp-data.json ====="
-          cat stamp-data.json
+
+          echo "파일 크기:"
+          wc -c stamp-data.json
+
+          echo "우표 개수:"
+          node -e "const d=require('./stamp-data.json'); console.log(d.length)"
 
       - name: Commit updated data
         run: |
+
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add stamp-data.json
 
-          git diff --cached --quiet || \
+          if git diff --cached --quiet; then
+            echo "변경사항 없음"
+          else
             git commit -m "Update stamp data"
-
-          git push
+            git push
+          fi

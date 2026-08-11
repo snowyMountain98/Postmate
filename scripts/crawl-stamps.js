@@ -1,7 +1,11 @@
 const fs = require("fs");
 const { JSDOM } = require("jsdom");
 const xpath = require("xpath");
-const OpenAI = require("openai");
+
+
+// ==================================================
+// 기본 설정
+// ==================================================
 
 const LIST_URL =
     "https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp";
@@ -12,68 +16,183 @@ const OUTPUT_FILE =
 const BASE_URL =
     "https://stamp.epost.go.kr";
 
-const OPENAI_MODEL =
-    "gpt-5-mini";
+
+// --------------------------------------------------
+// 크롤링 설정
+// --------------------------------------------------
+
+// 0 = 전체 페이지
+// 테스트할 때 1, 2 등으로 변경 가능
+const MAX_PAGES =
+    Number(process.env.MAX_PAGES || 0);
+
+
+// 한 페이지에서 동시에 처리할 상세 페이지 수
+const CONCURRENCY =
+    Number(process.env.CONCURRENCY || 3);
+
+
+// 상세 페이지 요청 사이의 최소 대기시간(ms)
+const REQUEST_DELAY =
+    Number(process.env.REQUEST_DELAY || 300);
+
+
+// 재시도 횟수
+const MAX_RETRIES =
+    Number(process.env.MAX_RETRIES || 3);
+
+
+// AI 키워드는 이번 전체 크롤링에서는 사용하지 않음
+const ENABLE_AI =
+    process.env.ENABLE_AI === "true";
+
+
+// ==================================================
+// sleep
+// ==================================================
+
+function sleep(ms) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(resolve, ms)
+    );
+
+}
 
 
 // ==================================================
 // HTML 가져오기
 // ==================================================
 
-async function fetchHtml(url) {
+async function fetchHtml(
+    url,
+    retryCount = 0
+) {
 
-    console.log(`접속: ${url}`);
+    try {
 
-    const response = await fetch(url, {
-
-        headers: {
-            "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
-
-            "Accept":
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-
-            "Accept-Language":
-                "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
-        },
-
-        signal:
-            AbortSignal.timeout(30000)
-
-    });
-
-    console.log(
-        `응답 상태: ${response.status}`
-    );
-
-    if (!response.ok) {
-        throw new Error(
-            `HTTP ${response.status}: ${url}`
+        console.log(
+            `접속: ${url}`
         );
+
+
+        const response =
+            await fetch(
+                url,
+                {
+
+                    headers: {
+
+                        "User-Agent":
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
+
+                        "Accept":
+                            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+
+                        "Accept-Language":
+                            "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+
+                    },
+
+                    signal:
+                        AbortSignal.timeout(30000)
+
+                }
+            );
+
+
+        console.log(
+            `응답 상태: ${response.status}`
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+
+        }
+
+
+        return await response.text();
+
+
+    }
+    catch (error) {
+
+        console.error(
+            `접속 실패: ${url}`
+        );
+
+        console.error(
+            error.message
+        );
+
+
+        if (
+            retryCount <
+            MAX_RETRIES
+        ) {
+
+            const waitTime =
+                2000 *
+                (retryCount + 1);
+
+
+            console.log(
+                `${waitTime / 1000}초 후 재시도...`
+            );
+
+
+            await sleep(
+                waitTime
+            );
+
+
+            return fetchHtml(
+                url,
+                retryCount + 1
+            );
+
+        }
+
+
+        throw error;
+
     }
 
-    return await response.text();
 }
 
 
 // ==================================================
-// URL
+// URL 변환
 // ==================================================
 
 function toAbsoluteUrl(url) {
 
     if (!url) {
+
         return "";
+
     }
 
+
     try {
+
         return new URL(
             url,
             BASE_URL
         ).href;
-    } catch {
-        return "";
+
     }
+    catch {
+
+        return "";
+
+    }
+
 }
 
 
@@ -86,11 +205,12 @@ function cleanText(text) {
     return (text || "")
         .replace(/\s+/g, " ")
         .trim();
+
 }
 
 
 // ==================================================
-// 날짜
+// 날짜 변환
 // ==================================================
 
 function normalizeDate(value) {
@@ -100,20 +220,23 @@ function normalizeDate(value) {
             /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/
         );
 
+
     if (!match) {
-        return cleanText(value);
+
+        return cleanText(
+            value
+        );
+
     }
 
+
     return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+
 }
 
 
 // ==================================================
-// XPath
-//
-// 핵심:
-// 네가 제공한 XPath 자체는 그대로 유지하고
-// HTML namespace에 맞춰 prefix를 자동으로 붙인다.
+// XPath 설정
 // ==================================================
 
 const XPATH = {
@@ -138,11 +261,12 @@ const XPATH = {
 
     image:
         "/html/body/div/div[3]/div[2]/div[3]/div[1]/div/p/img"
+
 };
 
 
 // ==================================================
-// XPath에 HTML namespace 적용
+// XPath namespace
 // ==================================================
 
 function namespaceXPath(path) {
@@ -150,24 +274,37 @@ function namespaceXPath(path) {
     const parts =
         path.split("/");
 
+
     return parts
-        .map(part => {
+        .map(
+            part => {
 
-            if (!part) {
-                return "";
+                if (!part) {
+
+                    return "";
+
+                }
+
+
+                const match =
+                    part.match(
+                        /^([a-zA-Z0-9_-]+)(.*)$/
+                    );
+
+
+                if (!match) {
+
+                    return part;
+
+                }
+
+
+                return `x:${match[1]}${match[2]}`;
+
             }
-
-            const match =
-                part.match(/^([a-zA-Z0-9_-]+)(.*)$/);
-
-            if (!match) {
-                return part;
-            }
-
-            return `x:${match[1]}${match[2]}`;
-
-        })
+        )
         .join("/");
+
 }
 
 
@@ -181,22 +318,27 @@ function getXPathText(
     select
 ) {
 
-    const namespacedPath =
-        namespaceXPath(path);
-
     const result =
         select(
-            namespacedPath,
+            namespaceXPath(path),
             document
         );
 
-    if (!result || result.length === 0) {
+
+    if (
+        !result ||
+        result.length === 0
+    ) {
+
         return "";
+
     }
+
 
     return cleanText(
         result[0].textContent
     );
+
 }
 
 
@@ -211,64 +353,203 @@ function getXPathAttribute(
     select
 ) {
 
-    const namespacedPath =
-        namespaceXPath(path);
-
     const result =
         select(
-            namespacedPath,
+            namespaceXPath(path),
             document
         );
 
-    if (!result || result.length === 0) {
+
+    if (
+        !result ||
+        result.length === 0
+    ) {
+
         return "";
+
     }
 
+
     return (
-        result[0].getAttribute(attribute) || ""
+        result[0]
+            .getAttribute(attribute)
+        || ""
     );
+
 }
 
 
 // ==================================================
-// 첫 번째 상세 URL
+// 목록 페이지에서 상세 URL 추출
 // ==================================================
 
-function findFirstStampUrl(html) {
+function extractDetailUrls(
+    html
+) {
 
     const dom =
         new JSDOM(html);
 
+
     const document =
         dom.window.document;
+
 
     const links =
         document.querySelectorAll(
             "a[href*='spsg0102.jsp']"
         );
 
-    if (links.length === 0) {
-        throw new Error(
-            "상세 페이지 링크를 찾지 못했습니다."
+
+    const urls =
+        new Set();
+
+
+    links.forEach(
+        link => {
+
+            const href =
+                link.getAttribute(
+                    "href"
+                );
+
+
+            if (!href) {
+
+                return;
+
+            }
+
+
+            const url =
+                toAbsoluteUrl(
+                    href
+                );
+
+
+            if (url) {
+
+                urls.add(url);
+
+            }
+
+        }
+    );
+
+
+    return Array.from(
+        urls
+    );
+
+}
+
+
+// ==================================================
+// 마지막 페이지 번호 찾기
+// ==================================================
+
+function findLastPage(
+    html
+) {
+
+    const dom =
+        new JSDOM(html);
+
+
+    const document =
+        dom.window.document;
+
+
+    const links =
+        document.querySelectorAll(
+            "a[href*='page_num=']"
         );
+
+
+    let lastPage =
+        1;
+
+
+    links.forEach(
+        link => {
+
+            const href =
+                link.getAttribute(
+                    "href"
+                );
+
+
+            if (!href) {
+
+                return;
+
+            }
+
+
+            const match =
+                href.match(
+                    /[?&]page_num=(\d+)/
+                );
+
+
+            if (!match) {
+
+                return;
+
+            }
+
+
+            const page =
+                Number(
+                    match[1]
+                );
+
+
+            if (
+                page >
+                lastPage
+            ) {
+
+                lastPage =
+                    page;
+
+            }
+
+        }
+    );
+
+
+    return lastPage;
+
+}
+
+
+// ==================================================
+// 페이지 URL 생성
+// ==================================================
+
+function getPageUrl(
+    page
+) {
+
+    const url =
+        new URL(
+            LIST_URL
+        );
+
+
+    if (page > 1) {
+
+        url.searchParams.set(
+            "page_num",
+            String(page)
+        );
+
     }
 
-    const href =
-        links[0].getAttribute("href");
 
-    const detailUrl =
-        toAbsoluteUrl(href);
+    return url.href;
 
-    console.log("");
-    console.log(
-        "===== 첫 번째 우표 ====="
-    );
-
-    console.log(
-        `상세 URL: ${detailUrl}`
-    );
-
-    return detailUrl;
 }
 
 
@@ -284,20 +565,17 @@ function parseStampDetail(
     const dom =
         new JSDOM(html);
 
+
     const document =
         dom.window.document;
 
-    /*
-     * 중요:
-     *
-     * JSDOM의 HTML DOM은 XHTML namespace를 사용하므로
-     * x: prefix를 사용하는 XPath 선택기를 생성한다.
-     */
 
     const select =
         xpath.useNamespaces({
+
             x:
                 "http://www.w3.org/1999/xhtml"
+
         });
 
 
@@ -356,12 +634,21 @@ function parseStampDetail(
             "",
 
         sourceUrl
+
     };
 
 
-    // ----------------------------------------------
+    // ------------------------------------------------
+    // 디자인
+    // ------------------------------------------------
+
+    stamp.design =
+        stamp.title;
+
+
+    // ------------------------------------------------
     // 이미지
-    // ----------------------------------------------
+    // ------------------------------------------------
 
     stamp.image =
         getXPathAttribute(
@@ -371,10 +658,12 @@ function parseStampDetail(
             select
         );
 
+
     stamp.image =
         toAbsoluteUrl(
             stamp.image
         );
+
 
     stamp.image =
         stamp.image.replace(
@@ -383,204 +672,181 @@ function parseStampDetail(
         );
 
 
-    // ----------------------------------------------
-    // 디자인
-    // ----------------------------------------------
-
-    /*
-     * 현재 확인된 페이지에서는
-     * 디자인 값이 제목과 동일하다.
-     *
-     * 실제 디자인 행을 별도 XPath로 확인하면
-     * 나중에 분리 가능하다.
-     */
-
-    stamp.design =
-        stamp.title;
-
-
     return stamp;
+
 }
 
 
 // ==================================================
-// 결과 검증
+// 데이터 검증
 // ==================================================
 
-function validateStamp(stamp) {
-
-    const requiredFields = [
-        "id",
-        "title",
-        "issueDate",
-        "faceValue",
-        "size",
-        "description",
-        "image"
-    ];
-
-    const missing =
-        requiredFields.filter(
-            field =>
-                !stamp[field]
-        );
-
-    if (missing.length > 0) {
-
-        throw new Error(
-            `필수 데이터 추출 실패: ${missing.join(", ")}`
-        );
-    }
-}
-
-
-// ==================================================
-// OpenAI
-// ==================================================
-
-function createOpenAIClient() {
-
-    const apiKey =
-        process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-        throw new Error(
-            "OPENAI_API_KEY가 없습니다."
-        );
-    }
-
-    return new OpenAI({
-        apiKey
-    });
-}
-
-
-// ==================================================
-// AI 키워드
-// ==================================================
-
-async function generateKeywords(
-    client,
+function isValidStamp(
     stamp
 ) {
 
-    console.log("");
-    console.log(
-        "===== AI 키워드 생성 시작 ====="
+    return Boolean(
+
+        stamp.id &&
+        stamp.title &&
+        stamp.issueDate &&
+        stamp.faceValue &&
+        stamp.size &&
+        stamp.description &&
+        stamp.image
+
     );
 
-    const input = `
-다음 한국 우표의 검색 키워드를 생성하세요.
+}
 
-제목: ${stamp.title}
-디자인: ${stamp.design}
-상세설명: ${stamp.description}
 
-조건:
-- 한국어만 사용
-- 실제 우표 소재와 관련된 단어
-- 검색어로 사용할 만한 단어
-- 최대 10개
-- 중요도 순서
-- 중복 금지
-- "우표", "발행일", "가격", "크기" 같은 메타데이터 제외
-- JSON 배열만 출력
+// ==================================================
+// 상세 페이지 하나 처리
+// ==================================================
 
-예:
-["로보트태권V","로봇","태권도","애니메이션","캐릭터"]
-`;
-
-    const response =
-        await client.responses.create({
-
-            model:
-                OPENAI_MODEL,
-
-            input,
-
-            store:
-                false
-        });
-
-    let output =
-        response.output_text;
-
-    if (!output) {
-        throw new Error(
-            "OpenAI 응답이 없습니다."
-        );
-    }
-
-    output =
-        output
-            .replace(
-                /^```json\s*/i,
-                ""
-            )
-            .replace(
-                /^```\s*/i,
-                ""
-            )
-            .replace(
-                /\s*```$/i,
-                ""
-            )
-            .trim();
-
-    let keywords;
+async function crawlStamp(
+    url,
+    index,
+    total
+) {
 
     try {
 
-        keywords =
-            JSON.parse(output);
+        console.log("");
+        console.log(
+            `[${index}/${total}] 우표 수집 시작`
+        );
 
-    } catch {
 
-        const start =
-            output.indexOf("[");
+        await sleep(
+            REQUEST_DELAY
+        );
 
-        const end =
-            output.lastIndexOf("]");
+
+        const html =
+            await fetchHtml(
+                url
+            );
+
+
+        const stamp =
+            parseStampDetail(
+                html,
+                url
+            );
+
 
         if (
-            start === -1 ||
-            end === -1
+            !isValidStamp(
+                stamp
+            )
         ) {
 
-            throw new Error(
-                `AI 응답 JSON 파싱 실패: ${output}`
+            console.warn(
+                `[${index}/${total}] 데이터 일부 누락`
             );
+
+            console.warn(
+                JSON.stringify(
+                    stamp,
+                    null,
+                    2
+                )
+            );
+
         }
 
-        keywords =
-            JSON.parse(
-                output.substring(
-                    start,
-                    end + 1
-                )
-            );
-    }
 
-    if (!Array.isArray(keywords)) {
-        throw new Error(
-            "AI 결과가 배열이 아닙니다."
+        console.log(
+            `[${index}/${total}] ${stamp.id} / ${stamp.title}`
         );
+
+
+        return stamp;
+
+    }
+    catch (error) {
+
+        console.error(
+            `[${index}/${total}] 실패`
+        );
+
+        console.error(
+            error.message
+        );
+
+
+        return null;
+
     }
 
-    return Array.from(
-        new Set(
-            keywords
-                .filter(
-                    keyword =>
-                        typeof keyword === "string"
+}
+
+
+// ==================================================
+// 동시 처리
+// ==================================================
+
+async function processInBatches(
+    urls
+) {
+
+    const results =
+        [];
+
+
+    let completed =
+        0;
+
+
+    while (
+        completed <
+        urls.length
+    ) {
+
+        const batch =
+            urls.slice(
+                completed,
+                completed + CONCURRENCY
+            );
+
+
+        const batchResults =
+            await Promise.all(
+
+                batch.map(
+                    (url, batchIndex) =>
+                        crawlStamp(
+                            url,
+                            completed +
+                            batchIndex +
+                            1,
+                            urls.length
+                        )
                 )
-                .map(
-                    keyword =>
-                        cleanText(keyword)
-                )
-                .filter(Boolean)
-        )
-    ).slice(0, 10);
+
+            );
+
+
+        results.push(
+            ...batchResults
+        );
+
+
+        completed +=
+            batch.length;
+
+
+        console.log("");
+        console.log(
+            `진행률: ${completed}/${urls.length} (${((completed / urls.length) * 100).toFixed(1)}%)`
+        );
+
+    }
+
+
+    return results;
+
 }
 
 
@@ -588,24 +854,30 @@ async function generateKeywords(
 // JSON 저장
 // ==================================================
 
-function saveJson(stamp) {
+function saveJson(
+    stamps
+) {
 
     fs.writeFileSync(
 
         OUTPUT_FILE,
 
         JSON.stringify(
-            [stamp],
+            stamps,
             null,
             2
         ),
 
         "utf8"
+
     );
 
+
+    console.log("");
     console.log(
         `JSON 저장 완료: ${OUTPUT_FILE}`
     );
+
 }
 
 
@@ -622,7 +894,7 @@ async function main() {
         );
 
         console.log(
-            "K-stamp + OpenAI 테스트"
+            "K-stamp 전체 우표 크롤링"
         );
 
         console.log(
@@ -630,104 +902,348 @@ async function main() {
         );
 
 
-        // 1. 목록
-        const listHtml =
+        console.log("");
+        console.log(
+            `동시 처리: ${CONCURRENCY}`
+        );
+
+        console.log(
+            `요청 간 대기: ${REQUEST_DELAY}ms`
+        );
+
+        console.log(
+            `최대 페이지: ${MAX_PAGES === 0 ? "전체" : MAX_PAGES}`
+        );
+
+
+        // ==================================================
+        // 1. 첫 페이지
+        // ==================================================
+
+        console.log("");
+        console.log(
+            "===== 1페이지 확인 ====="
+        );
+
+
+        const firstPageHtml =
             await fetchHtml(
                 LIST_URL
             );
 
 
-        console.log(
-            "목록 페이지 수집 완료"
-        );
-
-
-        // 2. 상세 URL
-        const detailUrl =
-            findFirstStampUrl(
-                listHtml
+        const detectedLastPage =
+            findLastPage(
+                firstPageHtml
             );
 
 
-        // 3. 상세
-        const detailHtml =
-            await fetchHtml(
-                detailUrl
-            );
+        const lastPage =
+            MAX_PAGES > 0
+                ? Math.min(
+                    MAX_PAGES,
+                    detectedLastPage
+                )
+                : detectedLastPage;
 
+
+        console.log("");
+        console.log(
+            `K-stamp 마지막 페이지: ${detectedLastPage}`
+        );
 
         console.log(
-            "상세 페이지 수집 완료"
+            `실제 수집 페이지: 1 ~ ${lastPage}`
         );
 
 
-        // 4. XPath
-        const stamp =
-            parseStampDetail(
-                detailHtml,
-                detailUrl
+        // ==================================================
+        // 2. 모든 페이지에서 상세 URL 수집
+        // ==================================================
+
+        const allUrls =
+            new Set();
+
+
+        for (
+            let page = 1;
+            page <= lastPage;
+            page++
+        ) {
+
+            console.log("");
+            console.log(
+                `===== 목록 페이지 ${page}/${lastPage} =====`
+            );
+
+
+            let pageHtml;
+
+
+            if (
+                page === 1
+            ) {
+
+                pageHtml =
+                    firstPageHtml;
+
+            }
+            else {
+
+                pageHtml =
+                    await fetchHtml(
+                        getPageUrl(
+                            page
+                        )
+                    );
+
+            }
+
+
+            const urls =
+                extractDetailUrls(
+                    pageHtml
+                );
+
+
+            console.log(
+                `상세 페이지 ${urls.length}개 발견`
+            );
+
+
+            urls.forEach(
+                url =>
+                    allUrls.add(
+                        url
+                    )
+            );
+
+
+            console.log(
+                `누적 상세 URL: ${allUrls.size}개`
+            );
+
+
+            /*
+             * 목록 페이지 사이에도 잠깐 대기
+             */
+
+            if (
+                page <
+                lastPage
+            ) {
+
+                await sleep(
+                    500
+                );
+
+            }
+
+        }
+
+
+        const detailUrls =
+            Array.from(
+                allUrls
             );
 
 
         console.log("");
         console.log(
-            "===== K-stamp 데이터 ====="
+            "========================================"
         );
 
         console.log(
-            JSON.stringify(
-                stamp,
-                null,
-                2
-            )
+            `전체 상세 페이지: ${detailUrls.length}개`
         );
-
-
-        // 5. 필수값 검증
-        validateStamp(stamp);
-
 
         console.log(
-            "✓ K-stamp 데이터 검증 성공"
+            "========================================"
         );
 
 
-        // ------------------------------------------
-        // 6. OpenAI
-        // ------------------------------------------
+        if (
+            detailUrls.length === 0
+        ) {
 
-        const openai =
-            createOpenAIClient();
+            throw new Error(
+                "상세 페이지 URL을 하나도 찾지 못했습니다."
+            );
+
+        }
 
 
-        stamp.keywords =
-            await generateKeywords(
-                openai,
-                stamp
+        // ==================================================
+        // 3. 전체 상세 페이지 크롤링
+        // ==================================================
+
+        console.log("");
+        console.log(
+            "===== 상세 페이지 크롤링 시작 ====="
+        );
+
+
+        const stamps =
+            await processInBatches(
+                detailUrls
             );
 
 
-        // 7. 저장
-        saveJson(stamp);
+        // ==================================================
+        // 4. 실패 제거
+        // ==================================================
+
+        const validStamps =
+            stamps.filter(
+                Boolean
+            );
 
 
         console.log("");
         console.log(
-            "✓ 전체 테스트 성공"
+            "===== 크롤링 결과 ====="
         );
 
 
-    } catch (error) {
+        console.log(
+            `요청: ${detailUrls.length}`
+        );
+
+        console.log(
+            `성공: ${validStamps.length}`
+        );
+
+        console.log(
+            `실패: ${detailUrls.length - validStamps.length}`
+        );
+
+
+        // ==================================================
+        // 5. ID 기준 중복 제거
+        // ==================================================
+
+        const stampMap =
+            new Map();
+
+
+        validStamps.forEach(
+            stamp => {
+
+                if (
+                    stamp.id
+                ) {
+
+                    stampMap.set(
+                        stamp.id,
+                        stamp
+                    );
+
+                }
+
+            }
+        );
+
+
+        const uniqueStamps =
+            Array.from(
+                stampMap.values()
+            );
+
+
+        console.log("");
+        console.log(
+            `중복 제거 후: ${uniqueStamps.length}개`
+        );
+
+
+        // ==================================================
+        // 6. 발행일 기준 정렬
+        // ==================================================
+
+        uniqueStamps.sort(
+            (a, b) => {
+
+                return (
+                    b.issueDate || ""
+                ).localeCompare(
+                    a.issueDate || ""
+                );
+
+            }
+        );
+
+
+        // ==================================================
+        // 7. AI 키워드
+        // ==================================================
+
+        /*
+         * 현재는 ENABLE_AI=false가 기본값.
+         *
+         * OpenAI API 크레딧을 충전한 뒤
+         * 별도 단계에서 처리하는 것을 권장.
+         */
+
+        if (
+            ENABLE_AI
+        ) {
+
+            console.log("");
+            console.log(
+                "⚠️ AI 키워드 생성은 현재 전체 크롤링에서 사용하지 않는 것을 권장합니다."
+            );
+
+        }
+
+
+        // ==================================================
+        // 8. JSON 저장
+        // ==================================================
+
+        saveJson(
+            uniqueStamps
+        );
+
+
+        // ==================================================
+        // 9. 완료
+        // ==================================================
+
+        console.log("");
+        console.log(
+            "========================================"
+        );
+
+        console.log(
+            "✓ K-stamp 전체 크롤링 완료"
+        );
+
+        console.log(
+            `✓ 총 ${uniqueStamps.length}개 우표 저장`
+        );
+
+        console.log(
+            "========================================"
+        );
+
+
+    }
+    catch (error) {
 
         console.error("");
         console.error(
             "❌ 크롤링 실패"
         );
 
-        console.error(error);
+        console.error(
+            error
+        );
+
 
         process.exit(1);
+
     }
+
 }
 
 
