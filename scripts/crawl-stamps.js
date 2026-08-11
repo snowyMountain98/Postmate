@@ -1,30 +1,24 @@
 const fs = require("fs");
 const cheerio = require("cheerio");
 
-const LIST_URL =
-    "https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp";
+const LIST_URL = "https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp";
 
 const OUTPUT_FILE = "stamp-data.json";
 
 const BASE_URL = "https://stamp.epost.go.kr";
 
 
-// --------------------------------------------------
+// ==================================================
 // HTML 가져오기
-// --------------------------------------------------
-
+// ==================================================
 async function fetchHtml(url) {
-
     console.log(`접속: ${url}`);
 
     const response = await fetch(url, {
         headers: {
-            "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
-            "Accept":
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language":
-                "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
         },
         signal: AbortSignal.timeout(30000)
     });
@@ -32,21 +26,16 @@ async function fetchHtml(url) {
     console.log(`응답 상태: ${response.status}`);
 
     if (!response.ok) {
-        throw new Error(
-            `HTTP ${response.status}: ${url}`
-        );
+        throw new Error(`HTTP ${response.status}: ${url}`);
     }
 
     return await response.text();
 }
 
-
-// --------------------------------------------------
-// 상대 URL → 절대 URL
-// --------------------------------------------------
-
+// ==================================================
+// URL 변환
+// ==================================================
 function toAbsoluteUrl(url) {
-
     if (!url) {
         return "";
     }
@@ -58,715 +47,294 @@ function toAbsoluteUrl(url) {
     }
 }
 
-
-// --------------------------------------------------
-// 공백 정리
-// --------------------------------------------------
-
+// ==================================================
+// 텍스트 정리
+// ==================================================
 function cleanText(text) {
-
-    return (text || "")
-        .replace(/\s+/g, " ")
-        .trim();
+    return (text || "").replace(/\s+/g, " ").trim();
 }
 
-
-// --------------------------------------------------
+// ==================================================
 // 날짜 변환
-// 2026. 7. 29. → 2026-07-29
-// --------------------------------------------------
-
+// ==================================================
 function normalizeDate(value) {
-
-    const match = value.match(
-        /(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/
-    );
+    const match = value.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
 
     if (!match) {
         return cleanText(value);
     }
 
-    const year = match[1];
-
-    const month =
-        match[2].padStart(2, "0");
-
-    const day =
-        match[3].padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
+    return [match[1], match[2].padStart(2, "0"), match[3].padStart(2, "0")].join("-");
 }
 
 
-// --------------------------------------------------
-// 목록 페이지에서 첫 번째 상세 URL 찾기
-// --------------------------------------------------
-
+// ==================================================
+// 목록 → 첫 번째 상세 URL
+// ==================================================
 function findFirstStampUrl(html) {
-
     const $ = cheerio.load(html);
 
     let detailUrl = "";
-    let title = "";
 
-    /*
-     * K-stamp 목록에서 spsg0102.jsp로 연결되는
-     * 첫 번째 링크를 찾는다.
-     */
-
-    $("a[href*='spsg0102.jsp']").each(
-        (_, element) => {
-
-            if (detailUrl) {
-                return;
-            }
-
-            const href =
-                $(element).attr("href");
-
-            const text =
-                cleanText(
-                    $(element).text()
-                );
-
-            if (href) {
-
-                detailUrl =
-                    toAbsoluteUrl(href);
-
-                title = text;
-
-            }
-
+    $("a[href*='spsg0102.jsp']").each((_, element) => {
+        if (detailUrl) {
+            return;
         }
-    );
 
+        const href = $(element).attr("href");
+
+        if (href) {
+            detailUrl = toAbsoluteUrl(href);
+        }
+    });
 
     if (!detailUrl) {
-
-        throw new Error(
-            "목록 페이지에서 상세 페이지 URL을 찾지 못했습니다."
-        );
-
+        throw new Error("상세 페이지 URL을 찾지 못했습니다.");
     }
-
 
     console.log("");
     console.log("===== 첫 번째 우표 =====");
-    console.log(`목록 제목: ${title}`);
     console.log(`상세 URL: ${detailUrl}`);
     console.log("");
 
-
-    return {
-        title,
-        detailUrl
-    };
+    return detailUrl;
 }
 
-
-// --------------------------------------------------
-// 상세 페이지에서 데이터 추출
-// --------------------------------------------------
-
-function parseDetailPage(html, url, listTitle) {
-
+// ==================================================
+// XPath와 동일한 CSS 선택자 방식
+// ==================================================
+function extractStamp(html, url) {
     const $ = cheerio.load(html);
 
+    /*
+     * 사용자가 제공한 XPath
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[2]/td
+     * → id
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[1]/th/h4
+     * → title
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[9]/td
+     * → issueDate
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[10]/td
+     * → faceValue
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[11]/td
+     * → size
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[2]/p[2]
+     * → description
+     *
+     * /html/body/div/div[3]/div[2]/div[3]/div[1]/div/p/img
+     * → image
+     */
+
+    const table = $("table").first();
+
+    const rows = table.find("tbody > tr");
 
     const stamp = {
-
-        id: "",
-
-        title: "",
-
+        id: cleanText(rows.eq(1).find("td").text()),
+        title: cleanText(rows.eq(0).find("th h4").text()),
         design: "",
-
-        issueDate: "",
-
-        faceValue: "",
-
-        size: "",
-
-        description: "",
-
+        issueDate: normalizeDate(rows.eq(8).find("td").text()),
+        faceValue: cleanText(rows.eq(9).find("td").text()),
+        size: cleanText(rows.eq(10).find("td").text()),
+        description: cleanText($("div").eq(3).find("p").eq(1).text()),
         keywords: [],
-
         image: "",
-
         sourceUrl: url
-
     };
 
+    // ----------------------------------------------
+    // 디자인
+    // ----------------------------------------------
+    rows.each((_, row) => {
+        const cells = $(row).find("th, td").map((_, cell) => cleanText($(cell).text())).get();
 
-    // ------------------------------------------------
-    // 제목
-    // ------------------------------------------------
-
-    /*
-     * 상세 페이지의 h3 / h4 등을 우선 확인하고
-     * 찾지 못하면 목록에서 가져온 제목 사용
-     */
-
-    const headings = $("h3, h4")
-        .map((_, element) =>
-            cleanText($(element).text())
-        )
-        .get()
-        .filter(Boolean);
-
-
-    /*
-     * 상세 페이지에는 보통
-     *
-     * 보통우표
-     * 또는
-     * 나만의 우표
-     *
-     * 등의 분류명이 있고,
-     * 목록 제목은 실제 디자인명일 수 있다.
-     *
-     * 우선 목록 제목을 사용한다.
-     */
-
-    stamp.title = listTitle;
-
-
-    // ------------------------------------------------
-    // 표 데이터 추출
-    // ------------------------------------------------
-
-    $("table tr").each(
-        (_, row) => {
-
-            const cells = $(row)
-                .find("th, td")
-                .map((_, cell) =>
-                    cleanText(
-                        $(cell).text()
-                    )
-                )
-                .get()
-                .filter(Boolean);
-
-
-            if (cells.length < 2) {
-                return;
-            }
-
-
-            const key = cells[0];
-            const value = cells[1];
-
-
-            if (key.includes("우표번호")) {
-
-                stamp.id = value;
-
-            }
-            else if (key.includes("디자인")) {
-
-                stamp.design = value;
-
-            }
-            else if (key.includes("발행일")) {
-
-                stamp.issueDate =
-                    normalizeDate(value);
-
-            }
-            else if (
-                key.includes("액면가격") ||
-                key.includes("액면가")
-            ) {
-
-                stamp.faceValue = value;
-
-            }
-            else if (key.includes("우표크기")) {
-
-                stamp.size = value;
-
-            }
-
+        if (cells.length >= 2 && cells[0].includes("디자인")) {
+            stamp.design = cells[1];
         }
-    );
+    });
 
-
-    // ------------------------------------------------
-    // 상세 설명
-    // ------------------------------------------------
-
-    /*
-     * "상세설명"이라는 제목 이후의 텍스트를 찾는다.
-     */
-
-    $("*").each(
-        (_, element) => {
-
-            if (stamp.description) {
-                return;
-            }
-
-
-            const text =
-                cleanText(
-                    $(element).text()
-                );
-
-
-            if (
-                text === "상세설명"
-            ) {
-
-                const nextText =
-                    cleanText(
-                        $(element)
-                            .next()
-                            .text()
-                    );
-
-
-                if (nextText) {
-
-                    stamp.description =
-                        nextText;
-
-                }
-
-            }
-
-        }
-    );
-
-
-    /*
-     * 위 방법으로 못 찾은 경우
-     * 상세 페이지 전체에서 상세설명 이후를
-     * 찾는 보조 방법
-     */
-
-    if (!stamp.description) {
-
-        const bodyText =
-            cleanText(
-                $("body").text()
-            );
-
-        const index =
-            bodyText.indexOf("상세설명");
-
-
-        if (index >= 0) {
-
-            let text =
-                bodyText.substring(
-                    index + "상세설명".length
-                );
-
-
-            /*
-             * 목록 / 하단 안내문 등이 붙는 경우 제거
-             */
-
-            text =
-                text
-                    .replace(
-                        /목록.*$/s,
-                        ""
-                    )
-                    .trim();
-
-
-            if (text) {
-
-                stamp.description =
-                    text;
-
-            }
-
-        }
-
-    }
-
-
-    // ------------------------------------------------
+    // ----------------------------------------------
     // 이미지
-    // ------------------------------------------------
-
-    /*
-     * 우표 사진 이미지 찾기
-     *
-     * alt에 우표 관련 문구가 있는 이미지를 우선 사용
-     */
-
-    let imageUrl = "";
-
-
-    $("img").each(
-        (_, element) => {
-
-            if (imageUrl) {
-                return;
-            }
-
-
-            const src =
-                $(element).attr("src");
-
-
-            const alt =
-                cleanText(
-                    $(element).attr("alt")
-                );
-
-
-            if (!src) {
-                return;
-            }
-
-
-            if (
-                alt.includes("우표사진") ||
-                alt.includes("우표 사진")
-            ) {
-
-                imageUrl =
-                    toAbsoluteUrl(src);
-
-            }
-
-        }
-    );
-
-
-    /*
-     * alt 조건으로 못 찾았을 경우
-     * 상세 페이지의 이미지 중
-     * 우표 이미지로 보이는 것을 보조 검색
-     */
-
-    if (!imageUrl) {
-
-        $("img").each(
-            (_, element) => {
-
-                if (imageUrl) {
-                    return;
-                }
-
-
-                const src =
-                    $(element).attr("src") || "";
-
-
-                const alt =
-                    cleanText(
-                        $(element).attr("alt")
-                    );
-
-
-                const combined =
-                    `${src} ${alt}`.toLowerCase();
-
-
-                if (
-                    combined.includes("stamp") ||
-                    combined.includes("smh") ||
-                    combined.includes("우표")
-                ) {
-
-                    imageUrl =
-                        toAbsoluteUrl(src);
-
-                }
-
-            }
-        );
-
-    }
-
-
+    // ----------------------------------------------
+    const image = $("div").eq(3).find("div").first().find("p img").first();
+    let imageUrl = image.attr("src") || "";
+    imageUrl = toAbsoluteUrl(imageUrl);
+    /* HTTP 이미지라면 HTTPS로 변경 */
+    imageUrl = imageUrl.replace(/^http:/, "https:");
     stamp.image = imageUrl;
-
-
-    // ------------------------------------------------
-    // 키워드
-    // ------------------------------------------------
-
-    stamp.keywords =
-        makeKeywords(stamp);
-
-
     return stamp;
 }
 
+// ==================================================
+// AI 키워드 생성
+// ==================================================
+async function generateKeywords(stamp) {
+    console.log("");
+    console.log("AI 키워드 생성 시작...");
 
-// --------------------------------------------------
-// 키워드 생성
-// --------------------------------------------------
+    const token = process.env.GITHUB_TOKEN;
 
-function makeKeywords(stamp) {
-
-    const keywords =
-        new Set();
-
-
-    const text = (
-
-        stamp.title +
-        " " +
-        stamp.design +
-        " " +
-        stamp.description
-
-    ).toLowerCase();
-
-
-    /*
-     * 기본적으로 디자인명을 키워드에 추가
-     */
-
-    if (stamp.design) {
-
-        keywords.add(
-            stamp.design
-        );
-
+    if (!token) {
+        throw new Error("GITHUB_TOKEN이 없습니다.");
     }
 
+    const prompt = `
+다음은 한국 우표의 정보입니다.
 
-    /*
-     * 검색용 키워드 사전
-     */
+우표 제목: ${stamp.title}
+디자인: ${stamp.design}
+발행일: ${stamp.issueDate}
+액면가격: ${stamp.faceValue}
+우표크기: ${stamp.size}
+상세설명: ${stamp.description}
 
-    const dictionary = [
+이 우표를 검색할 때 도움이 되는 한국어 키워드를 최대 10개 생성하세요.
 
-        "과일",
-        "사과",
-        "배",
-        "감귤",
-        "귤",
-        "포도",
-        "복숭아",
-        "딸기",
+조건:
+1. 반드시 한국어 키워드만 사용하세요.
+2. 우표의 실제 내용과 직접 관련된 단어만 사용하세요.
+3. 제목이나 디자인에 있는 단어도 포함할 수 있습니다.
+4. 상위 검색어 순서대로 중요도가 높은 것부터 작성하세요.
+5. 너무 일반적인 단어(우표, 발행, 가격 등)는 제외하세요.
+6. 중복되는 단어는 제외하세요.
+7. 반드시 JSON 배열만 출력하세요.
 
-        "꽃",
-        "무궁화",
-        "벚꽃",
-        "매화",
-        "장미",
-        "백합",
+예:
+["로봇","태권도","애니메이션","캐릭터","만화"]
+`;
 
-        "동물",
-        "호랑이",
-        "사자",
-        "곰",
-        "두루미",
-        "새",
-        "고양이",
-        "강아지",
+    const response = await fetch("https://models.github.ai/inference/chat/completions", {
+        method: "POST",
+        headers: {
+            "Accept": "application/vnd.github+json",
+            "Authorization": `Bearer ${token}`,
+            "X-GitHub-Api-Version": "2026-03-10",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-4.1",
+            messages: [{
+                role: "system",
+                content: "You generate concise Korean search keywords."
+            }, {
+                role: "user",
+                content: prompt
+            }],
+            temperature: 0.2,
+            max_tokens: 200
+        })
+    });
 
-        "자연",
-        "산",
-        "바다",
-        "강",
-        "섬",
-        "숲",
+    if (!response.ok) {
+        const errorText = await response.text();
 
-        "한국",
-        "서울",
-        "제주",
+        throw new Error(`GitHub Models API 오류 ${response.status}: ${errorText}`);
+    }
 
-        "역사",
-        "인물",
-        "문화",
-        "문화재",
-        "문화유산",
+    const result = await response.json();
 
-        "자동차",
-        "기차",
-        "철도",
-        "교통",
+    const content = result?.choices?.[0]?.message?.content;
 
-        "스포츠",
-        "축구",
-        "야구",
-        "KBO",
+    if (!content) {
+        throw new Error("AI 응답이 없습니다.");
+    }
 
-        "음식",
-        "김치",
-        "비빔밥",
-        "전통",
+    console.log(`AI 응답: ${content}`);
 
-        "과학",
-        "우주",
-        "별",
+    /* ```json ... ``` 형태로 오는 경우 제거 */
 
-        "한글",
-        "세종대왕",
+    const cleaned = content.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/, "").trim();
 
-        "태권도",
-        "캐릭터",
-        "여행",
-        "관광"
-
-    ];
-
-
-    dictionary.forEach(
-        keyword => {
-
-            if (
-                text.includes(
-                    keyword.toLowerCase()
-                )
-            ) {
-
-                keywords.add(keyword);
-
-            }
-
-        }
-    );
-
-
-    return Array.from(
-        keywords
-    );
-}
-
-
-// --------------------------------------------------
-// JSON 저장
-// --------------------------------------------------
-
-function saveJson(data) {
-
-    fs.writeFileSync(
-        OUTPUT_FILE,
-        JSON.stringify(
-            data,
-            null,
-            2
-        ),
-        "utf8"
-    );
-
-    console.log("");
-    console.log(
-        `JSON 저장 완료: ${OUTPUT_FILE}`
-    );
-
-}
-
-
-// --------------------------------------------------
-// 메인
-// --------------------------------------------------
-
-async function main() {
+    let keywords;
 
     try {
-
-        console.log(
-            "========================================"
-        );
-
-        console.log(
-            "K-stamp 크롤링 테스트 시작"
-        );
-
-        console.log(
-            "========================================"
-        );
-
-
-        // 1. 목록 페이지
-        const listHtml =
-            await fetchHtml(
-                LIST_URL
-            );
-
-
-        console.log(
-            "목록 페이지 수집 완료"
-        );
-
-
-        // 2. 첫 번째 상세 페이지
-        const firstStamp =
-            findFirstStampUrl(
-                listHtml
-            );
-
-
-        // 3. 상세 페이지
-        const detailHtml =
-            await fetchHtml(
-                firstStamp.detailUrl
-            );
-
-
-        console.log(
-            "상세 페이지 수집 완료"
-        );
-
-
-        // 4. 데이터 추출
-        const stamp =
-            parseDetailPage(
-                detailHtml,
-                firstStamp.detailUrl,
-                firstStamp.title
-            );
-
-
-        // 5. 결과 출력
-        console.log("");
-        console.log(
-            "========== 수집 결과 =========="
-        );
-
-        console.log(
-            JSON.stringify(
-                stamp,
-                null,
-                2
-            )
-        );
-
-        console.log(
-            "================================"
-        );
-
-
-        // 6. JSON 저장
-        saveJson([stamp]);
-
-
-        console.log("");
-        console.log(
-            "✓ 테스트 완료"
-        );
-
-    }
-    catch (error) {
-
-        console.error("");
-        console.error(
-            "❌ 크롤링 실패"
-        );
-
-        console.error(
-            error
-        );
-
-        process.exit(1);
-
+        keywords = JSON.parse(cleaned);
+    } catch {
+        throw new Error(`AI 응답을 JSON으로 변환할 수 없습니다: ${cleaned}`);
     }
 
+    if (!Array.isArray(keywords)) {
+        throw new Error("AI 키워드 결과가 배열이 아닙니다.");
+    }
+
+    /* 최대 10개 문자열만 빈 값 제거 중복 제거 */
+    keywords = keywords.filter(keyword => typeof keyword === "string").map(keyword => cleanText(keyword)).filter(Boolean);
+
+    keywords = Array.from(new Set(keywords)).slice(0, 10);
+
+    /* 디자인은 검색에 매우 중요하므로 AI가 빠뜨렸다면 앞쪽에 추가 */
+    if (stamp.design && !keywords.includes(stamp.design)) {
+        keywords.unshift(stamp.design);
+    }
+
+    /* 최종 10개 */
+    return keywords.slice(0, 10);
 }
 
+// ==================================================
+// JSON 저장
+// ==================================================
+function saveJson(data) {
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(data, null, 2), "utf8");
+
+    console.log("");
+    console.log(`JSON 저장 완료: ${OUTPUT_FILE}`);
+}
+
+// ==================================================
+// 실행
+// ==================================================
+async function main() {
+    try {
+        console.log("========================================");
+        console.log("K-stamp 크롤링 + AI 키워드 테스트");
+        console.log("========================================");
+
+        // 1. 목록
+        const listHtml = await fetchHtml(LIST_URL);
+
+        console.log("목록 페이지 수집 완료");
+
+        // 2. 첫 번째 상세 URL
+        const detailUrl = findFirstStampUrl(listHtml);
+
+        // 3. 상세 페이지
+        const detailHtml = await fetchHtml(detailUrl);
+
+        console.log("상세 페이지 수집 완료");
+
+        // 4. HTML 파싱
+        const stamp = extractStamp(detailHtml, detailUrl);
+
+        console.log("");
+        console.log("===== K-stamp 데이터 =====");
+
+        console.log(JSON.stringify(stamp, null, 2));
+
+        // 5. AI 키워드
+        stamp.keywords = await generateKeywords(stamp);
+
+        console.log("");
+        console.log("===== 최종 데이터 =====");
+        console.log(JSON.stringify(stamp, null, 2));
+
+        // 6. 저장
+        saveJson([stamp]);
+
+        console.log("");
+        console.log("✓ 테스트 완료");
+    } catch (error) {
+        console.error("");
+        console.error("❌ 크롤링 실패");
+        console.error(error);
+        process.exit(1);
+    }
+}
 
 main();
