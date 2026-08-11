@@ -431,3 +431,41 @@ button:active {
         padding: 10px 14px;
     }
 }
+
+/* ========================================
+   우표 검색 카드
+======================================== */
+.stamp-card-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+/* 우표 이미지 크기 */
+.stamp-image-wrap {
+    width: 110px;
+    min-width: 110px;
+    height: 110px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+.stamp-image {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    image-rendering: auto;
+}
+
+/* 이미지가 없을 때 */
+.stamp-image-empty {
+    font-size: 32px;
+}
