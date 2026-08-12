@@ -392,7 +392,7 @@ KBO
 
 async function generateKeywords(stamp) {
 
-`
+
 const imageUrl =
     normalizeImageUrl(
         stamp.image
@@ -559,7 +559,7 @@ if (
 
 
 return keywords;
-`
+
 
 }
 
