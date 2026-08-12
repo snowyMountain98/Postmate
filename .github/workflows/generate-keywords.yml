@@ -1,65 +1,203 @@
 name: Generate Stamp Keywords
 
 on:
-  workflow_dispatch:
+
+# Update Stamp Data가 성공하면 자동 실행
+
+workflow_run:
+workflows:
+- Update Stamp Data
+types:
+- completed
+
+# 필요하면 직접 실행 가능
+
+workflow_dispatch:
 
 permissions:
-  contents: write
+contents: write
 
 jobs:
-  generate:
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+generate:
+name: Generate Stamp Keywords
+runs-on: ubuntu-latest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
 
-      - name: Install dependencies
-        run: npm install
+if: >
+  github.event_name == 'workflow_dispatch' ||
+  github.event.workflow_run.conclusion == 'success'
 
-      - name: Generate AI keywords
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          BATCH_SIZE: "1000"
-          REQUEST_DELAY: "3000"
-          MAX_RETRIES: "3"
-        run: node scripts/generate-keywords.js
 
-      - name: Show result
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
+steps:
 
-          const data = JSON.parse(
-            fs.readFileSync("stamp-data.json", "utf8")
-          );
+  # ==========================================
+  # Checkout
+  # ==========================================
 
-          const completed = data.filter(
-            stamp =>
-              Array.isArray(stamp.keywords) &&
-              stamp.keywords.length > 0
-          );
+  - name: Checkout
+    uses: actions/checkout@v4
+    with:
+      token: ${{ secrets.GH_PAT }}
 
-          console.log(`전체 우표: ${data.length}`);
-          console.log(`키워드 생성 완료: ${completed.length}`);
-          console.log(`키워드 미생성: ${data.length - completed.length}`);
-          NODE
 
-      - name: Commit keywords
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  # ==========================================
+  # Node.js
+  # ==========================================
 
-          git add stamp-data.json
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 24
+      cache: npm
 
-          if git diff --cached --quiet; then
-            echo "변경사항 없음"
-          else
-            git commit -m "Generate stamp keywords"
-            git push
-          fi
+
+  # ==========================================
+  # npm
+  # ==========================================
+
+  - name: Install dependencies
+    run: npm ci
+
+
+  # ==========================================
+  # OpenAI Vision
+  # ==========================================
+
+  - name: Generate Stamp Keywords
+    env:
+
+      OPENAI_API_KEY:
+        ${{ secrets.OPENAI_API_KEY }}
+
+      GH_PAT:
+        ${{ secrets.GH_PAT }}
+
+      BATCH_SIZE:
+        "20"
+
+      REQUEST_DELAY:
+        "1000"
+
+      MAX_RETRIES:
+        "3"
+
+      OPENAI_MODEL:
+        "gpt-5-mini"
+
+    run: |
+
+      node scripts/generate-keywords.js
+
+
+  # ==========================================
+  # 결과 확인
+  # ==========================================
+
+  - name: Check Keyword Result
+    run: |
+
+      node - <<'NODE'
+
+      const fs = require("fs");
+
+      const data =
+        JSON.parse(
+          fs.readFileSync(
+            "stamp-data.json",
+            "utf8"
+          )
+        );
+
+
+      const completed =
+        data.filter(
+          x =>
+            Array.isArray(
+              x.keywords
+            ) &&
+            x.keywords.length > 0
+        );
+
+
+      const pending =
+        data.filter(
+          x =>
+            !Array.isArray(
+              x.keywords
+            ) ||
+            x.keywords.length === 0
+        );
+
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "Keyword Result"
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "전체:",
+        data.length
+      );
+
+      console.log(
+        "완료:",
+        completed.length
+      );
+
+      console.log(
+        "미완료:",
+        pending.length
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      NODE
+
+
+  # ==========================================
+  # Commit / Push
+  # ==========================================
+
+  - name: Commit Stamp Keywords
+    env:
+
+      GH_PAT:
+        ${{ secrets.GH_PAT }}
+
+    run: |
+
+      git config user.name \
+        "github-actions[bot]"
+
+      git config user.email \
+        "41898282+github-actions[bot]@users.noreply.github.com"
+
+
+      git add stamp-data.json
+
+
+      if git diff --cached --quiet; then
+
+        echo "변경된 키워드가 없습니다."
+
+      else
+
+        git commit \
+          -m "Generate stamp keywords"
+
+        git push \
+          https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git \
+          HEAD:${GITHUB_REF_NAME}
+
+      fi
+

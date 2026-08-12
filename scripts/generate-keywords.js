@@ -1,318 +1,374 @@
 const fs = require("fs");
+const path = require("path");
 const OpenAI = require("openai");
 
-// ==================================================
-// 기본 설정
-// ==================================================
+// ============================================================
+// 설정
+// ============================================================
 
-const INPUT_FILE = "stamp-data.json";
-const OUTPUT_FILE = "stamp-data.json";
+const DATA_FILE =
+path.join(
+__dirname,
+"..",
+"stamp-data.json"
+);
+
+// 한 번에 처리할 우표 수
+const BATCH_SIZE =
+Number(
+process.env.BATCH_SIZE || 20
+);
+
+// 요청 사이 대기
+const REQUEST_DELAY =
+Number(
+process.env.REQUEST_DELAY || 1000
+);
+
+// 실패 재시도
+const MAX_RETRIES =
+Number(
+process.env.MAX_RETRIES || 3
+);
 
 // OpenAI 모델
-const OPENAI_MODEL = "gpt-5-mini";
+const OPENAI_MODEL =
+process.env.OPENAI_MODEL ||
+"gpt-5-mini";
 
-// 한 번 실행할 때 처리할 우표 개수
-//
-// 예:
-// 20 → 한 번 실행할 때 최대 20개
-// 50 → 한 번 실행할 때 최대 50개
-//
-// 기본값: 20
-const BATCH_SIZE = Number(
-    process.env.BATCH_SIZE || 20
-);
+// OpenAI
+const client =
+new OpenAI({
+apiKey:
+process.env.OPENAI_API_KEY
+});
 
-// API 호출 사이 대기시간
-// 너무 빠르게 여러 요청을 보내지 않도록 함
-const REQUEST_DELAY = Number(
-    process.env.REQUEST_DELAY || 1000
-);
-
-// API 오류 발생 시 재시도 횟수
-const MAX_RETRIES = Number(
-    process.env.MAX_RETRIES || 3
-);
-
-
-// ==================================================
-// sleep
-// ==================================================
+// ============================================================
+// 기본 함수
+// ============================================================
 
 function sleep(ms) {
 
-    return new Promise(
-        resolve => setTimeout(resolve, ms)
-    );
+
+return new Promise(
+    resolve =>
+        setTimeout(
+            resolve,
+            ms
+        )
+);
+
 
 }
 
-
-// ==================================================
-// JSON 읽기
-// ==================================================
+// ============================================================
+// 데이터 읽기
+// ============================================================
 
 function loadStampData() {
 
-    if (!fs.existsSync(INPUT_FILE)) {
 
-        throw new Error(
-            `${INPUT_FILE} 파일이 없습니다.`
-        );
+if (
+    !fs.existsSync(
+        DATA_FILE
+    )
+) {
 
-    }
-
-    const data =
-        JSON.parse(
-            fs.readFileSync(
-                INPUT_FILE,
-                "utf8"
-            )
-        );
-
-    if (!Array.isArray(data)) {
-
-        throw new Error(
-            `${INPUT_FILE}의 형식이 배열이 아닙니다.`
-        );
-
-    }
-
-    return data;
+    throw new Error(
+        `파일을 찾을 수 없습니다: ${DATA_FILE}`
+    );
 
 }
 
 
-// ==================================================
-// JSON 저장
-// ==================================================
+const data =
+    JSON.parse(
+        fs.readFileSync(
+            DATA_FILE,
+            "utf8"
+        )
+    );
+
+
+if (
+    !Array.isArray(data)
+) {
+
+    throw new Error(
+        "stamp-data.json의 형식이 배열이 아닙니다."
+    );
+
+}
+
+
+return data;
+
+
+}
+
+// ============================================================
+// 데이터 저장
+// ============================================================
 
 function saveStampData(data) {
 
-    fs.writeFileSync(
 
-        OUTPUT_FILE,
+fs.writeFileSync(
 
-        JSON.stringify(
-            data,
-            null,
-            2
-        ),
+    DATA_FILE,
 
-        "utf8"
+    JSON.stringify(
+        data,
+        null,
+        2
+    ),
 
-    );
+    "utf8"
+
+);
+
+
+}
+
+// ============================================================
+// 이미지 URL
+// ============================================================
+
+function normalizeImageUrl(url) {
+
+
+if (!url) {
+    return "";
+}
+
+
+let imageUrl =
+    String(url).trim();
+
+
+if (
+    imageUrl.startsWith(
+        "http://"
+    )
+) {
+
+    imageUrl =
+        imageUrl.replace(
+            "http://",
+            "https://"
+        );
 
 }
 
 
-// ==================================================
-// OpenAI Client
-// ==================================================
+return imageUrl;
 
-function createOpenAIClient() {
 
-    const apiKey =
-        process.env.OPENAI_API_KEY;
+}
 
-    if (!apiKey) {
+// ============================================================
+// 키워드 정리
+// ============================================================
 
-        throw new Error(
-            "OPENAI_API_KEY 환경변수가 없습니다."
-        );
+function normalizeKeywords(value) {
+
+
+let keywords = [];
+
+
+if (
+    Array.isArray(value)
+) {
+
+    keywords =
+        value;
+
+}
+else if (
+    typeof value === "string"
+) {
+
+    try {
+
+        const parsed =
+            JSON.parse(value);
+
+
+        if (
+            Array.isArray(parsed)
+        ) {
+
+            keywords =
+                parsed;
+
+        }
+        else {
+
+            keywords =
+                value
+                    .split(",")
+                    .map(
+                        v => v.trim()
+                    );
+
+        }
+
+    }
+    catch {
+
+        keywords =
+            value
+                .split(",")
+                .map(
+                    v => v.trim()
+                );
 
     }
 
-    return new OpenAI({
-        apiKey
-    });
-
 }
 
 
-// ==================================================
-// 키워드가 이미 있는지 확인
-// ==================================================
+return [
+    ...new Set(
+        keywords
+            .map(
+                keyword =>
+                    String(keyword)
+                        .trim()
+                        .replace(
+                            /^["']|["']$/g,
+                            ""
+                        )
+            )
+            .filter(Boolean)
+    )
+].slice(
+    0,
+    10
+);
 
-function hasKeywords(stamp) {
-
-    return (
-
-        Array.isArray(
-            stamp.keywords
-        ) &&
-
-        stamp.keywords.length > 0
-
-    );
 
 }
 
-
-// ==================================================
-// AI 입력 생성
-// ==================================================
+// ============================================================
+// AI Prompt
+// ============================================================
 
 function createPrompt(stamp) {
 
+
 return `
 
-당신은 대한민국 우표 검색 서비스의 검색 키워드를 만드는 전문가입니다.
 
-아래 우표 정보를 분석하여 사용자가 이 우표를 찾을 때
-입력할 가능성이 높은 검색 키워드를 최대 10개 생성하세요.
+당신은 대한민국 우표 검색 서비스의 AI 키워드 생성 전문가입니다.
 
-[우표 제목]
+사용자가 우표의 정확한 제목을 몰라도
+우표의 소재, 주제, 분야, 이미지에 등장하는 대상을
+검색해서 해당 우표를 찾을 수 있도록
+검색용 키워드를 생성하세요.
+
+제목:
 ${stamp.title || ""}
 
-[디자인]
+디자인:
 ${stamp.design || ""}
 
-[발행일]
+발행일:
 ${stamp.issueDate || ""}
 
-[액면가격]
+액면가격:
 ${stamp.faceValue || ""}
 
-[우표크기]
+크기:
 ${stamp.size || ""}
 
-[상세설명]
+상세설명:
 ${stamp.description || ""}
 
-===== 키워드 생성 목적 =====
+첨부된 우표 이미지를 반드시 분석하세요.
 
-이 키워드는 우표 검색 서비스에서 사용됩니다.
+특히 이미지에서 실제로 확인할 수 있는
+다음 요소를 적극적으로 활용하세요.
 
-사용자가 우표의 정확한 제목을 모르더라도
-"애니메이션", "로봇", "야구", "스포츠", "불교",
-"문화유산"과 같은 관련 주제나 소재를 검색했을 때
-해당 우표를 찾을 수 있도록 만드는 것이 목적입니다.
+인물
+동물
+식물
+음식
+스포츠
+건축물
+문화유산
+자연
+장소
+캐릭터
+물건
+상징물
+글자
+로고
+기관
+행사
+작품
 
-===== 키워드 생성 규칙 =====
+사용자가 실제로 검색할 가능성이 높은
+짧은 명사 또는 명사구를 생성하세요.
 
-1. 최대 10개의 키워드를 생성하세요.
+예를 들어:
 
-2. 단순히 상세설명에 등장한 단어를 그대로 뽑지 마세요.
-   우표의 전체적인 주제와 소재를 이해한 후
-   검색에 유용한 키워드를 생성하세요.
+로보트태권V 우표:
+로보트태권V
+애니메이션
+만화
+로봇
+캐릭터
+태권도
+한국 애니메이션
 
-3. 반드시 다음 유형의 키워드를 고려하세요.
+KBO 우표:
+KBO
+야구
+스포츠
+프로야구
+한국 프로야구
+야구선수
+야구장
 
-   * 우표의 핵심 주제
-   * 상위 카테고리
-   * 관련 분야
-   * 작품/콘텐츠의 종류
-   * 주요 소재
-   * 등장인물 또는 캐릭터
-   * 관련 문화
-   * 역사적 의미
-   * 스포츠 종목
-   * 동물/식물 종류
-   * 종교/문화 관련 개념
-   * 기관/단체
-   * 장소
-   * 문화유산
-   * 사용자가 실제로 검색할 가능성이 높은 일반적인 표현
+유네스코 및 불교 문화유산:
+유네스코
+불교
+부처님
+문화유산
+세계유산
+불교문화
+사찰
 
-4. 구체적인 키워드와 넓은 범주의 키워드를 함께 생성하세요.
+사과가 그려진 우표:
+사과
+과일
+과일우표
+식물
+농산물
 
-   예:
+규칙:
 
-   로보트태권V
-   → 로보트태권V
-   → 애니메이션
-   → 만화
-   → 로봇
-   → 캐릭터
-   → 태권도
-   → 한국 애니메이션
-
-   KBO 관련 우표
-   → KBO
-   → 야구
-   → 스포츠
-   → 프로야구
-   → 한국 프로야구
-   → 야구선수
-
-   불교 관련 문화유산 우표
-   → 유네스코
-   → 불교
-   → 부처님
-   → 문화유산
-   → 세계유산
-   → 사찰
-
-5. 우표의 핵심 소재가 무엇인지 먼저 판단하세요.
-
-   예를 들어:
-
-   * 로봇 애니메이션이라면
-     "애니메이션", "만화", "로봇" 등을 고려합니다.
-
-   * 야구 관련 우표라면
-     "스포츠", "야구", "프로야구" 등을 고려합니다.
-
-   * 불교 관련 문화유산이라면
-     "불교", "부처님", "유네스코", "문화유산",
-     "세계유산" 등을 고려합니다.
-
-   * 꽃 우표라면
-     "꽃", "식물", "자연"과 함께 실제 꽃 이름을 고려합니다.
-
-   * 동물 우표라면
-     "동물", "야생동물", "포유류" 등과 함께
-     실제 동물 이름을 고려합니다.
-
-6. 검색어로 사용할 수 있도록 너무 세부적인 문장이나
-   긴 표현은 피하세요.
-
-   좋은 예:
-   "야구"
-   "스포츠"
-   "애니메이션"
-   "로봇"
-   "불교"
-   "문화유산"
-
-   좋지 않은 예:
-   "1976년에 처음 개봉한 대한민국 대표 애니메이션"
-
-7. 우표와 직접적인 관련이 없는 일반적인 단어는 제외하세요.
-
-   다음과 같은 단어는 특별한 의미가 없는 한 사용하지 마세요.
-
-   * 우표
-   * 기념우표
-   * 발행
-   * 발행일
-   * 가격
-   * 액면가
-   * 크기
-   * 대한민국
-   * 한국
-
-8. 단, "한국 애니메이션", "한국 프로야구"처럼
-   해당 우표의 주제를 구체적으로 설명하는 표현이라면 사용할 수 있습니다.
-
-9. 상세설명에 명시되어 있거나 우표 제목/디자인을 통해
-   명확하게 확인할 수 있는 내용만 사용하세요.
-
-10. 사실에 없는 내용을 추측해서 생성하지 마세요.
-
-11. 같은 의미의 키워드를 불필요하게 반복하지 마세요.
-
-12. 키워드는 중요도가 높은 순서대로 정렬하세요.
-
-13. 한국어 검색을 기준으로 작성하세요.
-
-14. 검색 사용자가 실제로 입력할 법한 표현을 우선하세요.
-
-===== 최종 출력 형식 =====
+1. 최대 10개까지만 생성하세요.
+2. 중요도가 높은 순서대로 작성하세요.
+3. 구체적인 키워드와 상위 개념 키워드를 함께 생성하세요.
+4. 이미지에서 확인되는 내용을 적극적으로 활용하세요.
+5. 제목, 디자인, 설명도 함께 활용하세요.
+6. 이미지와 설명이 다르면 둘을 종합해서 판단하세요.
+7. 사용자가 검색할 가능성이 높은 단어를 우선하세요.
+8. 너무 긴 문장은 사용하지 마세요.
+9. 같은 의미의 키워드를 반복하지 마세요.
+10. 모든 우표에 공통되는 "우표", "기념우표", "발행일", "액면가", "크기"는 제외하세요.
+11. "한국" 단독 키워드는 가급적 제외하세요.
+12. 이미지에 존재하지 않는 대상을 추측하지 마세요.
+13. 불확실한 내용은 키워드로 만들지 마세요.
+14. 명확한 고유명사는 포함하세요.
+15. 넓은 범주의 검색도 가능하도록 상위 카테고리를 포함하세요.
+16. 검색에 실제로 도움이 되는 단어를 우선하세요.
 
 반드시 JSON 배열만 반환하세요.
 
-설명이나 문장은 절대 추가하지 마세요.
+설명이나 마크다운은 절대 추가하지 마세요.
 
 예:
 
@@ -325,208 +381,237 @@ ${stamp.description || ""}
 "태권도",
 "한국 애니메이션"
 ]
+
 `;
+
+}
+
+// ============================================================
+// OpenAI Vision
+// ============================================================
+
+async function generateKeywords(stamp) {
+
+`
+const imageUrl =
+    normalizeImageUrl(
+        stamp.image
+    );
+
+
+if (!imageUrl) {
+
+    throw new Error(
+        "우표 이미지 URL이 없습니다."
+    );
+
 }
 
 
-// ==================================================
-// OpenAI 호출
-// ==================================================
+const prompt =
+    createPrompt(
+        stamp
+    );
 
-async function requestKeywords(
-    client,
-    stamp
+
+const response =
+    await client.responses.create({
+
+        model:
+            OPENAI_MODEL,
+
+        store:
+            false,
+
+        input: [
+
+            {
+
+                role:
+                    "user",
+
+                content: [
+
+                    {
+
+                        type:
+                            "input_text",
+
+                        text:
+                            prompt
+
+                    },
+
+                    {
+
+                        type:
+                            "input_image",
+
+                        image_url:
+                            imageUrl,
+
+                        detail:
+                            "high"
+
+                    }
+
+                ]
+
+            }
+
+        ]
+
+    });
+
+
+const output =
+    response.output_text;
+
+
+if (!output) {
+
+    throw new Error(
+        "OpenAI 응답이 비어 있습니다."
+    );
+
+}
+
+
+let jsonText =
+    output.trim();
+
+
+jsonText =
+    jsonText
+        .replace(
+            /^json\s*/i,
+            ""
+        )
+        .replace(
+            /^\s*/i,
+            ""
+        )
+        .replace(
+            /\s*$/i,
+            ""
+        )
+        .trim();
+
+
+const start =
+    jsonText.indexOf("[");
+
+
+const end =
+    jsonText.lastIndexOf("]");
+
+
+if (
+    start !== -1 &&
+    end !== -1 &&
+    end > start
 ) {
 
-    const prompt =
-        createPrompt(stamp);
-
-    const response =
-        await client.responses.create({
-
-            model:
-                OPENAI_MODEL,
-
-            input:
-                prompt,
-
-            store:
-                false
-
-        });
-
-    let output =
-        response.output_text;
-
-    if (!output) {
-
-        throw new Error(
-            "OpenAI 응답이 없습니다."
+    jsonText =
+        jsonText.substring(
+            start,
+            end + 1
         );
 
-    }
-
-    output =
-        output.trim();
-
-    // Markdown 코드 블록 제거
-    output =
-        output
-            .replace(
-                /^```json\s*/i,
-                ""
-            )
-            .replace(
-                /^```\s*/i,
-                ""
-            )
-            .replace(
-                /\s*```$/i,
-                ""
-            )
-            .trim();
+}
 
 
-    let keywords;
+let keywords;
+
+
+try {
+
+    keywords =
+        JSON.parse(
+            jsonText
+        );
+
+}
+catch {
+
+    throw new Error(
+        `AI 응답 JSON 변환 실패: ${jsonText}`
+    );
+
+}
+
+
+keywords =
+    normalizeKeywords(
+        keywords
+    );
+
+
+if (
+    keywords.length === 0
+) {
+
+    throw new Error(
+        "생성된 키워드가 없습니다."
+    );
+
+}
+
+
+return keywords;
+`
+
+}
+
+// ============================================================
+// 재시도
+// ============================================================
+
+async function generateKeywordsWithRetry(
+stamp
+) {
+
+
+let lastError;
+
+
+for (
+    let attempt = 1;
+    attempt <= MAX_RETRIES;
+    attempt++
+) {
 
     try {
 
-        keywords =
-            JSON.parse(output);
+        console.log(
+            `AI 요청 ${attempt}/${MAX_RETRIES}`
+        );
+
+
+        return await generateKeywords(
+            stamp
+        );
 
     }
-    catch {
+    catch (error) {
 
-        // 응답에 다른 텍스트가 섞여 있는 경우
-        const start =
-            output.indexOf("[");
+        lastError =
+            error;
 
-        const end =
-            output.lastIndexOf("]");
+
+        console.error(
+            `AI 요청 실패 (${attempt}/${MAX_RETRIES})`
+        );
+
+
+        console.error(
+            error.message
+        );
+
 
         if (
-            start === -1 ||
-            end === -1 ||
-            end <= start
+            attempt < MAX_RETRIES
         ) {
-
-            throw new Error(
-                `AI 응답을 JSON 배열로 변환하지 못했습니다: ${output}`
-            );
-
-        }
-
-        keywords =
-            JSON.parse(
-                output.substring(
-                    start,
-                    end + 1
-                )
-            );
-
-    }
-
-
-    if (!Array.isArray(keywords)) {
-
-        throw new Error(
-            "AI 결과가 배열이 아닙니다."
-        );
-
-    }
-
-
-    // 문자열만 사용
-    keywords =
-        keywords
-            .filter(
-                keyword =>
-                    typeof keyword === "string"
-            )
-            .map(
-                keyword =>
-                    keyword.trim()
-            )
-            .filter(Boolean);
-
-
-    // 중복 제거
-    keywords =
-        Array.from(
-            new Set(
-                keywords
-            )
-        );
-
-
-    // 최대 10개
-    keywords =
-        keywords.slice(
-            0,
-            10
-        );
-
-
-    return keywords;
-
-}
-
-
-// ==================================================
-// 재시도
-// ==================================================
-
-async function requestKeywordsWithRetry(
-    client,
-    stamp
-) {
-
-    for (
-        let attempt = 1;
-        attempt <= MAX_RETRIES;
-        attempt++
-    ) {
-
-        try {
-
-            return await requestKeywords(
-                client,
-                stamp
-            );
-
-        }
-        catch (error) {
-
-            console.error(
-                `API 오류 (${attempt}/${MAX_RETRIES}): ${error.message}`
-            );
-
-
-            // 크레딧 부족은 재시도해도 해결되지 않음
-            if (
-                error.status === 429 &&
-                (
-                    error.code ===
-                    "insufficient_quota" ||
-
-                    error.code ===
-                    "credit_balance_exhausted"
-                )
-            ) {
-
-                throw error;
-
-            }
-
-
-            if (
-                attempt >= MAX_RETRIES
-            ) {
-
-                throw error;
-
-            }
-
 
             const waitTime =
                 attempt * 3000;
@@ -548,87 +633,136 @@ async function requestKeywordsWithRetry(
 }
 
 
-// ==================================================
+throw lastError;
+
+
+}
+
+// ============================================================
+// 키워드 생성 대상
+// ============================================================
+
+function getPendingStamps(
+stamps
+) {
+
+
+return stamps.filter(
+    stamp =>
+        !(
+            Array.isArray(
+                stamp.keywords
+            ) &&
+            stamp.keywords.length > 0
+        )
+);
+
+
+}
+
+// ============================================================
 // 메인
-// ==================================================
+// ============================================================
 
 async function main() {
 
-    console.log(
-        "========================================"
+
+console.log(
+    "========================================"
+);
+
+console.log(
+    "K-stamp AI 이미지 키워드 생성"
+);
+
+console.log(
+    "========================================"
+);
+
+
+console.log(
+    `모델: ${OPENAI_MODEL}`
+);
+
+console.log(
+    `배치 크기: ${BATCH_SIZE}`
+);
+
+console.log(
+    `요청 간 대기: ${REQUEST_DELAY}ms`
+);
+
+console.log(
+    `최대 재시도: ${MAX_RETRIES}`
+);
+
+
+if (
+    !process.env.OPENAI_API_KEY
+) {
+
+    throw new Error(
+        "OPENAI_API_KEY 환경변수가 설정되지 않았습니다."
     );
 
-    console.log(
-        "K-stamp AI 키워드 생성"
-    );
-
-    console.log(
-        "========================================"
-    );
+}
 
 
-    console.log(
-        `모델: ${OPENAI_MODEL}`
-    );
-
-    console.log(
-        `배치 크기: ${BATCH_SIZE}`
-    );
-
-    console.log(
-        `요청 간 대기: ${REQUEST_DELAY}ms`
-    );
+const stamps =
+    loadStampData();
 
 
-    // ------------------------------------------------
-    // 1. 데이터 읽기
-    // ------------------------------------------------
-
-    const stamps =
-        loadStampData();
+console.log(
+    `전체 우표: ${stamps.length}개`
+);
 
 
-    console.log(
-        `전체 우표: ${stamps.length}개`
-    );
+let totalSuccess = 0;
+let totalFail = 0;
+let batchNumber = 0;
 
 
-    // ------------------------------------------------
-    // 2. 아직 키워드가 없는 우표 찾기
-    // ------------------------------------------------
+// ========================================================
+// 전체 미처리 우표가 없어질 때까지 반복
+// ========================================================
+
+while (true) {
 
     const pending =
-        stamps.filter(
-            stamp =>
-                !hasKeywords(stamp)
+        getPendingStamps(
+            stamps
         );
 
 
+    console.log("");
     console.log(
-        `키워드 미생성: ${pending.length}개`
+        "========================================"
     );
 
+    console.log(
+        `남은 미처리 우표: ${pending.length}개`
+    );
 
-    // ------------------------------------------------
-    // 모두 처리된 경우
-    // ------------------------------------------------
+    console.log(
+        "========================================"
+    );
+
 
     if (
         pending.length === 0
     ) {
 
         console.log(
-            "모든 우표에 키워드가 이미 생성되어 있습니다."
+            "🎉 모든 우표의 키워드 생성이 완료되었습니다."
         );
 
-        return;
+        break;
 
     }
 
 
-    // ------------------------------------------------
-    // 3. 이번 실행에서 처리할 우표
-    // ------------------------------------------------
+    batchNumber++;
+
 
     const targets =
         pending.slice(
@@ -638,28 +772,17 @@ async function main() {
 
 
     console.log(
-        `이번 실행 처리 대상: ${targets.length}개`
+        `배치 ${batchNumber}: ${targets.length}개 처리`
     );
 
 
-    // ------------------------------------------------
-    // 4. OpenAI
-    // ------------------------------------------------
-
-    const client =
-        createOpenAIClient();
+    let batchSuccess = 0;
+    let batchFail = 0;
 
 
-    let success =
-        0;
-
-    let failed =
-        0;
-
-
-    // ------------------------------------------------
-    // 5. 하나씩 처리
-    // ------------------------------------------------
+    // ====================================================
+    // 현재 배치
+    // ====================================================
 
     for (
         let i = 0;
@@ -671,35 +794,28 @@ async function main() {
             targets[i];
 
 
-        const index =
-            stamps.indexOf(
-                stamp
-            );
-
-
         console.log("");
         console.log(
             "----------------------------------------"
         );
 
         console.log(
-            `[${i + 1}/${targets.length}]`
+            `[배치 ${batchNumber}] ${i + 1}/${targets.length}`
         );
 
         console.log(
-            `ID: ${stamp.id}`
+            `ID: ${stamp.id || ""}`
         );
 
         console.log(
-            `제목: ${stamp.title}`
+            `제목: ${stamp.title || ""}`
         );
 
 
         try {
 
             const keywords =
-                await requestKeywordsWithRetry(
-                    client,
+                await generateKeywordsWithRetry(
                     stamp
                 );
 
@@ -708,47 +824,40 @@ async function main() {
                 keywords;
 
 
-            success++;
+            batchSuccess++;
+            totalSuccess++;
 
 
             console.log(
-                `✓ 키워드 생성 성공`
+                "✓ 키워드 생성 성공"
             );
 
             console.log(
-                JSON.stringify(
-                    keywords,
-                    null,
-                    2
+                keywords.join(
+                    ", "
                 )
             );
 
 
-            /*
-             * 한 건 성공할 때마다 즉시 저장
-             *
-             * GitHub Actions가 중간에 종료되어도
-             * 이미 성공한 데이터는 보존됨.
-             */
-
+            // 성공 즉시 저장
             saveStampData(
                 stamps
             );
 
 
             console.log(
-                `✓ ${OUTPUT_FILE} 저장 완료`
+                "✓ stamp-data.json 저장"
             );
-
 
         }
         catch (error) {
 
-            failed++;
+            batchFail++;
+            totalFail++;
 
 
             console.error(
-                `✗ 키워드 생성 실패`
+                "❌ 키워드 생성 실패"
             );
 
             console.error(
@@ -757,53 +866,14 @@ async function main() {
 
 
             /*
-             * 실패한 우표는 keywords=[]
-             * 그대로 둔다.
+             * keywords를 변경하지 않음.
              *
-             * 다음 실행에서 다시 처리된다.
+             * 따라서 다음 실행/재시도에서
+             * 다시 처리할 수 있음.
              */
-
-            stamp.keywords =
-                [];
-
-
-            /*
-             * 현재까지 성공한 데이터 저장
-             */
-
-            saveStampData(
-                stamps
-            );
-
-
-            /*
-             * 크레딧 부족이면 더 진행해도
-             * 전부 실패하므로 즉시 종료
-             */
-
-            if (
-                error.status === 429 &&
-                (
-                    error.code ===
-                    "insufficient_quota" ||
-
-                    error.code ===
-                    "credit_balance_exhausted"
-                )
-            ) {
-
-                throw new Error(
-                    "OpenAI API 크레딧이 부족합니다. 현재까지 처리한 데이터는 저장되었습니다."
-                );
-
-            }
 
         }
 
-
-        // ------------------------------------------------
-        // 다음 요청 전 대기
-        // ------------------------------------------------
 
         if (
             i <
@@ -819,56 +889,119 @@ async function main() {
     }
 
 
-    // ------------------------------------------------
-    // 6. 결과
-    // ------------------------------------------------
-
     console.log("");
     console.log(
-        "========================================"
+        `배치 ${batchNumber} 완료`
     );
 
     console.log(
-        "처리 완료"
+        `성공: ${batchSuccess}`
     );
 
     console.log(
-        `성공: ${success}`
+        `실패: ${batchFail}`
     );
 
-    console.log(
-        `실패: ${failed}`
-    );
 
-    console.log(
-        `남은 우표: ${Math.max(0, pending.length - targets.length)}`
-    );
+    // ----------------------------------------------------
+    // 중요:
+    // 한 배치에서 전부 실패했다면 무한 반복 방지
+    // ----------------------------------------------------
 
-    console.log(
-        "========================================"
-    );
+    if (
+        batchSuccess === 0
+    ) {
+
+        console.error("");
+        console.error(
+            "이번 배치에서 성공한 우표가 없습니다."
+        );
+
+        console.error(
+            "OpenAI API 또는 이미지 URL 문제일 수 있습니다."
+        );
+
+        console.error(
+            "현재까지 성공한 데이터만 저장하고 종료합니다."
+        );
+
+        break;
+
+    }
 
 }
 
 
-// ==================================================
-// 실행
-// ==================================================
+// ========================================================
+// 최종 저장
+// ========================================================
+
+saveStampData(
+    stamps
+);
+
+
+const remaining =
+    getPendingStamps(
+        stamps
+    );
+
+
+console.log("");
+console.log(
+    "========================================"
+);
+
+console.log(
+    "AI 키워드 생성 최종 결과"
+);
+
+console.log(
+    "========================================"
+);
+
+console.log(
+    `전체 우표: ${stamps.length}개`
+);
+
+console.log(
+    `성공: ${totalSuccess}개`
+);
+
+console.log(
+    `실패: ${totalFail}개`
+);
+
+console.log(
+    `남은 미처리: ${remaining.length}개`
+);
+
+console.log(
+    "========================================"
+);
+
+
+// 일부 실패가 있어도
+// 성공한 데이터는 배포 가능하므로
+// workflow 자체는 실패시키지 않음.
+
+
+}
 
 main()
-    .catch(
-        error => {
+.catch(error => {
 
-            console.error("");
-            console.error(
-                "❌ 키워드 생성 작업 실패"
-            );
 
-            console.error(
-                error
-            );
-
-            process.exit(1);
-
-        }
+    console.error("");
+    console.error(
+        "❌ 키워드 생성 실패"
     );
+
+    console.error(
+        error
+    );
+
+    process.exit(1);
+
+});
+

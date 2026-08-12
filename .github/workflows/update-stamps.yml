@@ -1,65 +1,158 @@
 name: Update Stamp Data
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 permissions:
-  contents: write
+contents: write
 
 jobs:
-  crawl:
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+crawl:
+name: Update Stamp Data
+runs-on: ubuntu-latest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
 
-      - name: Install dependencies
-        run: npm install
+steps:
 
-      - name: Crawl K-stamp
-        env:
-          MAX_PAGES: "20"
-          CONCURRENCY: "5"
-          REQUEST_DELAY: "1500"
-          MAX_RETRIES: "3"
-        run: node scripts/crawl-stamps.js
+  # ==========================================
+  # Checkout
+  # ==========================================
 
-      - name: Validate stamp data
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
+  - name: Checkout
+    uses: actions/checkout@v4
+    with:
+      token: ${{ secrets.GH_PAT }}
 
-          const data = JSON.parse(
-            fs.readFileSync("stamp-data.json", "utf8")
-          );
 
-          if (!Array.isArray(data)) {
-            throw new Error("stamp-data.json이 배열이 아닙니다.");
-          }
+  # ==========================================
+  # Node.js
+  # ==========================================
 
-          if (data.length === 0) {
-            throw new Error("수집된 우표 데이터가 없습니다.");
-          }
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 24
+      cache: npm
 
-          console.log(`우표 데이터 ${data.length}개 확인`);
-          NODE
 
-      - name: Commit stamp data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  # ==========================================
+  # npm
+  # ==========================================
 
-          git add stamp-data.json
+  - name: Install dependencies
+    run: npm ci
 
-          if git diff --cached --quiet; then
-            echo "변경사항 없음"
-          else
-            git commit -m "Update stamp data"
-            git push
-          fi
+
+  # ==========================================
+  # K-stamp 전체 페이지
+  # ==========================================
+
+  - name: Crawl K-stamp
+    env:
+
+      MAX_PAGES: "0"
+
+      CONCURRENCY: "3"
+
+      REQUEST_DELAY: "500"
+
+      MAX_RETRIES: "3"
+
+    run: |
+      node scripts/crawl-stamps.js
+
+
+  # ==========================================
+  # 데이터 확인
+  # ==========================================
+
+  - name: Check Stamp Data
+    run: |
+
+      node - <<'NODE'
+
+      const fs = require("fs");
+
+      const data =
+        JSON.parse(
+          fs.readFileSync(
+            "stamp-data.json",
+            "utf8"
+          )
+        );
+
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "Stamp Data"
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "전체 우표:",
+        data.length
+      );
+
+      console.log(
+        "ID:",
+        data.filter(
+          x => x.id
+        ).length
+      );
+
+      console.log(
+        "이미지:",
+        data.filter(
+          x => x.image
+        ).length
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      NODE
+
+
+  # ==========================================
+  # Commit / Push
+  # ==========================================
+
+  - name: Commit Stamp Data
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+
+    run: |
+
+      git config user.name \
+        "github-actions[bot]"
+
+      git config user.email \
+        "41898282+github-actions[bot]@users.noreply.github.com"
+
+
+      git add stamp-data.json
+
+
+      if git diff --cached --quiet; then
+
+        echo "변경된 우표 데이터가 없습니다."
+
+      else
+
+        git commit \
+          -m "Update stamp data"
+
+        git push \
+          https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git \
+          HEAD:${GITHUB_REF_NAME}
+
+      fi
+
