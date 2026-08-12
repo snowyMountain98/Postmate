@@ -95,7 +95,6 @@
         // ========================================
 
         function searchStamps() {
-
             const keyword =
                 document
                     .getElementById("searchInput")
@@ -103,59 +102,32 @@
                     .trim()
                     .toLowerCase();
 
-
-            // 검색어가 없으면 전체 표시
             if (!keyword) {
-
                 displayStamps(stamps);
-
                 return;
             }
 
+            const results = stamps.filter(stamp => {
 
-            const results =
-                stamps.filter(stamp => {
+                const searchableText = [
+                    stamp.title,
+                    stamp.design,
+                    stamp.issueDate,
+                    stamp.faceValue,
+                    stamp.size,
+                    stamp.description,
+                    ...(Array.isArray(stamp.keywords)
+                        ? stamp.keywords
+                        : [])
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
 
-                    /*
-                     * description은 검색에서 제외
-                     *
-                     * 검색 대상
-                     * - 제목
-                     * - 디자인
-                     * - 발행일
-                     * - 액면가
-                     * - 크기
-                     * - AI 키워드
-                     */
-
-                    const searchableText = [
-
-                        stamp.title || "",
-
-                        stamp.design || "",
-
-                        stamp.issueDate || "",
-
-                        stamp.faceValue || "",
-
-                        stamp.size || "",
-
-                        ...(Array.isArray(stamp.keywords)
-                            ? stamp.keywords
-                            : [])
-
-                    ]
-                        .join(" ")
-                        .toLowerCase();
-
-
-                    return searchableText.includes(keyword);
-
-                });
-
+                return searchableText.includes(keyword);
+            });
 
             displayStamps(results);
-
         }
 
 
