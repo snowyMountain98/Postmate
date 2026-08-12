@@ -41,11 +41,9 @@ Number(process.env.MAX_RETRIES || 3);
 
 function sleep(ms) {
 
-
 return new Promise(
     resolve => setTimeout(resolve, ms)
 );
-
 
 }
 
@@ -57,7 +55,6 @@ async function fetchHtml(
 url,
 retryCount = 0
 ) {
-
 
 try {
 
@@ -140,7 +137,6 @@ catch (error) {
 
 }
 
-
 }
 
 // ============================================================
@@ -148,7 +144,6 @@ catch (error) {
 // ============================================================
 
 function toAbsoluteUrl(url) {
-
 
 if (!url) {
     return "";
@@ -169,7 +164,6 @@ catch {
 
 }
 
-
 }
 
 // ============================================================
@@ -178,11 +172,9 @@ catch {
 
 function cleanText(text) {
 
-
 return (text || "")
     .replace(/\s+/g, " ")
     .trim();
-
 
 }
 
@@ -191,7 +183,6 @@ return (text || "")
 // ============================================================
 
 function normalizeDate(value) {
-
 
 const text =
     cleanText(value);
@@ -216,7 +207,6 @@ return (
     `${match[3].padStart(2, "0")}`
 );
 
-
 }
 
 // ============================================================
@@ -224,7 +214,6 @@ return (
 // ============================================================
 
 const XPATH = {
-
 
 id:
     "/html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[2]/td",
@@ -247,7 +236,6 @@ description:
 image:
     "/html/body/div/div[3]/div[2]/div[3]/div[1]/div/p/img"
 
-
 };
 
 // ============================================================
@@ -255,7 +243,6 @@ image:
 // ============================================================
 
 function namespaceXPath(path) {
-
 
 return path
     .split("/")
@@ -282,7 +269,6 @@ return path
     })
     .join("/");
 
-
 }
 
 // ============================================================
@@ -294,7 +280,6 @@ document,
 path,
 select
 ) {
-
 
 const result =
     select(
@@ -317,7 +302,6 @@ return cleanText(
     result[0].textContent
 );
 
-
 }
 
 // ============================================================
@@ -330,7 +314,6 @@ path,
 attribute,
 select
 ) {
-
 
 const result =
     select(
@@ -354,7 +337,6 @@ return (
     || ""
 );
 
-
 }
 
 // ============================================================
@@ -362,7 +344,6 @@ return (
 // ============================================================
 
 function extractDetailUrls(html) {
-
 
 const dom =
     new JSDOM(html);
@@ -405,7 +386,6 @@ links.forEach(link => {
 
 return Array.from(urls);
 
-
 }
 
 // ============================================================
@@ -413,7 +393,6 @@ return Array.from(urls);
 // ============================================================
 
 function getPageUrl(page) {
-
 
 const url =
     new URL(LIST_URL);
@@ -427,7 +406,6 @@ url.searchParams.set(
 
 return url.href;
 
-
 }
 
 // ============================================================
@@ -438,7 +416,6 @@ function parseStampDetail(
 html,
 sourceUrl
 ) {
-
 
 const dom =
     new JSDOM(html);
@@ -541,7 +518,6 @@ stamp.image =
 
 return stamp;
 
-
 }
 
 // ============================================================
@@ -549,7 +525,6 @@ return stamp;
 // ============================================================
 
 function loadExistingData() {
-
 
 if (
     !fs.existsSync(DATA_FILE)
@@ -593,7 +568,6 @@ catch {
 
 }
 
-
 }
 
 // ============================================================
@@ -604,7 +578,6 @@ function deduplicateById(
 stamps,
 existingStamps
 ) {
-
 
 const existingMap =
     new Map();
@@ -691,7 +664,6 @@ return Array.from(
     resultMap.values()
 );
 
-
 }
 
 // ============================================================
@@ -703,7 +675,6 @@ url,
 index,
 total
 ) {
-
 
 try {
 
@@ -759,7 +730,6 @@ catch (error) {
 
 }
 
-
 }
 
 // ============================================================
@@ -769,7 +739,6 @@ catch (error) {
 async function processInBatches(
 urls
 ) {
-
 
 const results = [];
 
@@ -822,7 +791,6 @@ while (
 
 return results;
 
-
 }
 
 // ============================================================
@@ -830,7 +798,6 @@ return results;
 // ============================================================
 
 function saveData(data) {
-
 
 fs.writeFileSync(
 
@@ -851,7 +818,6 @@ console.log(
     `JSON 저장 완료: ${DATA_FILE}`
 );
 
-
 }
 
 // ============================================================
@@ -859,7 +825,6 @@ console.log(
 // ============================================================
 
 async function collectAllDetailUrls() {
-
 
 const allUrls =
     new Set();
@@ -994,7 +959,6 @@ return Array.from(
     allUrls
 );
 
-
 }
 
 // ============================================================
@@ -1002,7 +966,6 @@ return Array.from(
 // ============================================================
 
 async function main() {
-
 
 console.log(
     "========================================"
@@ -1154,12 +1117,10 @@ console.log(
     "========================================"
 );
 
-
 }
 
 main()
 .catch(error => {
-
 
     console.error("");
     console.error(
@@ -1173,4 +1134,3 @@ main()
     process.exit(1);
 
 });
-

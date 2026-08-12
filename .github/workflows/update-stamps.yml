@@ -1,158 +1,73 @@
 name: Update Stamp Data
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
-contents: write
+  contents: write
 
 jobs:
+  crawl:
+    name: Update Stamp Data
+    runs-on: ubuntu-latest
 
-crawl:
-name: Update Stamp Data
-runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
 
-steps:
+      - name: Install dependencies
+        run: npm ci
 
-  # ==========================================
-  # Checkout
-  # ==========================================
+      - name: Crawl K-stamp
+        env:
+          MAX_PAGES: "0"
+          CONCURRENCY: "3"
+          REQUEST_DELAY: "500"
+          MAX_RETRIES: "3"
+        run: |
+          node scripts/crawl-stamps.js
 
-  - name: Checkout
-    uses: actions/checkout@v4
-    with:
-      token: ${{ secrets.GH_PAT }}
+      - name: Check Stamp Data
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
 
+          const data = JSON.parse(
+            fs.readFileSync("stamp-data.json", "utf8")
+          );
 
-  # ==========================================
-  # Node.js
-  # ==========================================
+          console.log("========================================");
+          console.log("Stamp Data");
+          console.log("========================================");
+          console.log("전체 우표:", data.length);
+          console.log("ID 있음:", data.filter(x => x.id).length);
+          console.log("이미지 있음:", data.filter(x => x.image).length);
+          console.log("========================================");
+          NODE
 
-  - name: Setup Node.js
-    uses: actions/setup-node@v4
-    with:
-      node-version: 24
-      cache: npm
+      - name: Commit Stamp Data
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git add stamp-data.json
 
-  # ==========================================
-  # npm
-  # ==========================================
+          if git diff --cached --quiet; then
+            echo "변경된 우표 데이터가 없습니다."
+          else
+            git commit -m "Update stamp data"
 
-  - name: Install dependencies
-    run: npm ci
-
-
-  # ==========================================
-  # K-stamp 전체 페이지
-  # ==========================================
-
-  - name: Crawl K-stamp
-    env:
-
-      MAX_PAGES: "0"
-
-      CONCURRENCY: "3"
-
-      REQUEST_DELAY: "500"
-
-      MAX_RETRIES: "3"
-
-    run: |
-      node scripts/crawl-stamps.js
-
-
-  # ==========================================
-  # 데이터 확인
-  # ==========================================
-
-  - name: Check Stamp Data
-    run: |
-
-      node - <<'NODE'
-
-      const fs = require("fs");
-
-      const data =
-        JSON.parse(
-          fs.readFileSync(
-            "stamp-data.json",
-            "utf8"
-          )
-        );
-
-
-      console.log(
-        "========================================"
-      );
-
-      console.log(
-        "Stamp Data"
-      );
-
-      console.log(
-        "========================================"
-      );
-
-      console.log(
-        "전체 우표:",
-        data.length
-      );
-
-      console.log(
-        "ID:",
-        data.filter(
-          x => x.id
-        ).length
-      );
-
-      console.log(
-        "이미지:",
-        data.filter(
-          x => x.image
-        ).length
-      );
-
-      console.log(
-        "========================================"
-      );
-
-      NODE
-
-
-  # ==========================================
-  # Commit / Push
-  # ==========================================
-
-  - name: Commit Stamp Data
-    env:
-      GH_PAT: ${{ secrets.GH_PAT }}
-
-    run: |
-
-      git config user.name \
-        "github-actions[bot]"
-
-      git config user.email \
-        "41898282+github-actions[bot]@users.noreply.github.com"
-
-
-      git add stamp-data.json
-
-
-      if git diff --cached --quiet; then
-
-        echo "변경된 우표 데이터가 없습니다."
-
-      else
-
-        git commit \
-          -m "Update stamp data"
-
-        git push \
-          https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git \
-          HEAD:${GITHUB_REF_NAME}
-
-      fi
-
+            git push \
+              https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git \
+              HEAD:${GITHUB_REF_NAME}
+          fi
