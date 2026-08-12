@@ -236,6 +236,9 @@ const XPATH = {
     title:
         "/html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[1]/th/h4",
 
+    design:
+        "/html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[5]/td",
+
     issueDate:
         "/html/body/div/div[3]/div[2]/div[3]/div[1]/table/tbody/tr[9]/td",
 
@@ -688,66 +691,66 @@ function parseStampDetail(
         });
 
 
-    const stamp = {
+const stamp = {
 
-        id:
+    id:
+        getXPathText(
+            document,
+            XPATH.id,
+            select
+        ),
+
+    title:
+        getXPathText(
+            document,
+            XPATH.title,
+            select
+        ),
+
+    design:
+        getXPathText(
+            document,
+            XPATH.design,
+            select
+        ),
+
+    issueDate:
+        normalizeDate(
             getXPathText(
                 document,
-                XPATH.id,
+                XPATH.issueDate,
                 select
-            ),
+            )
+        ),
 
-        title:
-            getXPathText(
-                document,
-                XPATH.title,
-                select
-            ),
+    faceValue:
+        getXPathText(
+            document,
+            XPATH.faceValue,
+            select
+        ),
 
-        design:
-            "",
+    size:
+        getXPathText(
+            document,
+            XPATH.size,
+            select
+        ),
 
-        issueDate:
-            normalizeDate(
-                getXPathText(
-                    document,
-                    XPATH.issueDate,
-                    select
-                )
-            ),
+    description:
+        getXPathText(
+            document,
+            XPATH.description,
+            select
+        ),
 
-        faceValue:
-            getXPathText(
-                document,
-                XPATH.faceValue,
-                select
-            ),
+    keywords: [],
 
-        size:
-            getXPathText(
-                document,
-                XPATH.size,
-                select
-            ),
+    image: "",
 
-        description:
-            getXPathText(
-                document,
-                XPATH.description,
-                select
-            ),
+    sourceUrl
 
-        keywords: [],
-
-        image: "",
-
-        sourceUrl
-
-    };
-
-
-    stamp.design =
-        stamp.title;
+};
 
 
     stamp.image =
