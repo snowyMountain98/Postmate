@@ -448,7 +448,7 @@ function getPageUrl(
     if (page > 1) {
 
         url.searchParams.set(
-            "page_num",
+            "currentPage",
             String(page)
         );
 
