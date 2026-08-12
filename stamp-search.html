@@ -237,62 +237,20 @@
                 // 카드
 
                 card.innerHTML = `
-
-<div class="stamp-card-content">
-
-    ${image}
-
-    <div class="stamp-info">
-
-        <h2 class="stamp-title">
-            ${escapeHtml(stamp.title || "제목 없음")}
-        </h2>
-
-        <div class="stamp-meta">
-
-            ${stamp.issueDate
-                        ? `
-                        <div class="stamp-date">
-                            📅 ${escapeHtml(stamp.issueDate)}
+                    <div class="stamp-card-content">
+                        ${image}
+                        <div class="stamp-info">
+                            <h2 class="stamp-title">${escapeHtml(stamp.title || "제목 없음")}</h2>
+                            ${stamp.design ? `<div class="stamp-design">${escapeHtml(stamp.design)}</div>` : ""}
+                            <div class="stamp-meta">
+                                ${stamp.issueDate ? `<div class="stamp-date">📅 ${escapeHtml(stamp.issueDate)}</div>` : ""}
+                                ${stamp.faceValue ? `<div class="stamp-value">💰 ${escapeHtml(stamp.faceValue)}</div>` : ""}
+                                ${stamp.size ? `<div class="stamp-size">📐 ${escapeHtml(stamp.size)}</div>` : ""}
+                            </div>
                         </div>
-                    `
-                        : ""
-                    }
-
-            ${stamp.faceValue
-                        ? `
-                        <div class="stamp-value">
-                            💰 ${escapeHtml(stamp.faceValue)}
-                        </div>
-                    `
-                        : ""
-                    }
-
-            ${stamp.size
-                        ? `
-                        <div class="stamp-size">
-                            📐 ${escapeHtml(stamp.size)}
-                        </div>
-                    `
-                        : ""
-                    }
-
-        </div>
-
-    </div>
-
-</div>
-
-${tags
-                        ? `
-            <div class="stamp-tags">
-                ${tags}
-            </div>
-        `
-                        : ""
-                    }
-
-`;
+                    </div>
+                    ${tags ? `<div class="stamp-tags">${tags}</div>` : ""}
+                `;
 
 
 
