@@ -34,24 +34,6 @@ jobs:
         run: |
           node scripts/crawl-stamps.js
 
-      - name: Check Stamp Data
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
-
-          const data = JSON.parse(
-            fs.readFileSync("stamp-data.json", "utf8")
-          );
-
-          console.log("========================================");
-          console.log("Stamp Data");
-          console.log("========================================");
-          console.log("전체 우표:", data.length);
-          console.log("ID 있음:", data.filter(x => x.id).length);
-          console.log("이미지 있음:", data.filter(x => x.image).length);
-          console.log("========================================");
-          NODE
-
       - name: Commit Stamp Data
         env:
           GH_PAT: ${{ secrets.GH_PAT }}

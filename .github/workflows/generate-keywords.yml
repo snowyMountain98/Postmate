@@ -45,36 +45,6 @@ jobs:
         run: |
           node scripts/generate-keywords.js
 
-      - name: Check Keyword Result
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
-
-          const data = JSON.parse(
-            fs.readFileSync("stamp-data.json", "utf8")
-          );
-
-          const completed = data.filter(
-            x =>
-              Array.isArray(x.keywords) &&
-              x.keywords.length > 0
-          );
-
-          const pending = data.filter(
-            x =>
-              !Array.isArray(x.keywords) ||
-              x.keywords.length === 0
-          );
-
-          console.log("========================================");
-          console.log("Keyword Result");
-          console.log("========================================");
-          console.log("전체:", data.length);
-          console.log("완료:", completed.length);
-          console.log("미완료:", pending.length);
-          console.log("========================================");
-          NODE
-
       - name: Commit Stamp Keywords
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
