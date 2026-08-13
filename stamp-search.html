@@ -44,7 +44,11 @@
     <script>
 
         let stamps = [];
+        let currentResults = [];
+        let displayedCount = 0;
 
+        const STAMPS_PER_PAGE = 10;
+        let isLoadingMore = false;
 
         // ========================================
         // 우표 데이터 불러오기
@@ -236,145 +240,120 @@
         // ========================================
 
         function displayStamps(results) {
+            const list = document.getElementById("stampList");
+            const info = document.getElementById("searchInfo");
+            const keyword = document.getElementById("searchInput").value.trim();
 
-            const list =
-                document.getElementById("stampList");
-
-            const info =
-                document.getElementById("searchInfo");
-
-            const keyword =
-                document
-                    .getElementById("searchInput")
-                    .value
-                    .trim();
-
+            currentResults = results;
+            displayedCount = 0;
 
             list.innerHTML = "";
 
-
-            // 검색 결과 문구
-
             if (keyword) {
-
-                info.textContent =
-                    `"${keyword}" 검색 결과 ${results.length}개`;
-
+                info.textContent = `"${keyword}" 검색 결과 ${results.length}개`;
             } else {
-
-                info.textContent =
-                    `전체 우표 ${results.length}개`;
-
+                info.textContent = `전체 우표 ${results.length}개`;
             }
-
-
-            // 검색 결과 없음
 
             if (results.length === 0) {
-
                 list.innerHTML =
-                    '<div class="no-result">' +
-                    '🔎 검색 결과가 없어요.' +
-                    '<br><br>' +
-                    '다른 검색어를 입력해보세요.' +
-                    '</div>';
-
+                    '<div class="no-result">🔎 검색 결과가 없어요.<br><br>다른 검색어를 입력해보세요.</div>';
                 return;
-
             }
 
-
-            // 우표 카드 생성
-
-            results.forEach(stamp => {
-
-                const card =
-                    document.createElement("div");
-
-                card.className =
-                    "stamp-card";
-
-
-                // 이미지
-
-                const image =
-                    stamp.image
-                        ? `
-                        <div class="stamp-image-wrap">
-                            <img
-                                src="${escapeHtml(stamp.image)}"
-                                alt="${escapeHtml(stamp.title || "우표")}"
-                                class="stamp-image"
-                                loading="lazy"
-                                onerror="this.parentElement.style.display='none';"
-                            >
-                        </div>
-                    `
-                        : `
-                        <div class="stamp-image-wrap stamp-image-empty">
-                            📮
-                        </div>
-                    `;
-
-
-                // 키워드
-
-                const keywords =
-                    Array.isArray(stamp.keywords)
-                        ? stamp.keywords
-                        : [];
-
-
-                const tags =
-                    keywords
-                        .slice(0, 10)
-                        .map(keyword =>
-                            `<span class="stamp-tag">#${escapeHtml(keyword)}</span>`
-                        )
-                        .join("");
-
-
-                // 카드
-
-                card.innerHTML = `
-                    <div class="stamp-card-content">
-                        ${image}
-                        <div class="stamp-info">
-                            <h2 class="stamp-title">${escapeHtml(stamp.title || "제목 없음")}</h2>
-                            ${stamp.design ? `<div class="stamp-design">${escapeHtml(stamp.design)}</div>` : ""}
-                            <div class="stamp-meta">
-                                ${stamp.issueDate ? `<div class="stamp-date">📅 ${escapeHtml(stamp.issueDate)}</div>` : ""}
-                                ${stamp.faceValue ? `<div class="stamp-value">💰 ${escapeHtml(stamp.faceValue)}</div>` : ""}
-                                ${stamp.size ? `<div class="stamp-size">📐 ${escapeHtml(stamp.size)}</div>` : ""}
-                            </div>
-                        </div>
-                    </div>
-                    ${tags ? `<div class="stamp-tags">${tags}</div>` : ""}
-                `;
-
-
-
-                list.appendChild(card);
-
-            });
-
-
-            // 검색 결과가 있으면 결과 위치로 이동
+            loadMoreStamps();
 
             if (keyword) {
-
                 list.scrollIntoView({
-
                     behavior: "smooth",
-
                     block: "start"
-
                 });
-
             }
-
         }
 
+        function loadMoreStamps() {
+            if (isLoadingMore) {
+                return;
+            }
+
+            if (displayedCount >= currentResults.length) {
+                return;
+            }
+
+            isLoadingMore = true;
+
+            const list = document.getElementById("stampList");
+
+            const nextItems = currentResults.slice(
+                displayedCount,
+                displayedCount + STAMPS_PER_PAGE
+            );
+
+            nextItems.forEach(stamp => {
+                const card = document.createElement("div");
+                card.className = "stamp-card";
+
+                const tags = (stamp.keywords || [])
+                    .map(keyword =>
+                        `<span class="stamp-tag">#${keyword}</span>`
+                    )
+                    .join("");
+
+                card.innerHTML = `
+            <div class="stamp-card-content">
+
+                <div class="stamp-image-wrap">
+                    ${stamp.image
+                        ? `<img
+                                class="stamp-image"
+                                src="${stamp.image}"
+                                alt="${stamp.title || "우표"}"
+                                loading="lazy"
+                              >`
+                        : `<div class="stamp-image-empty">📮</div>`
+                    }
+                </div>
+
+                <div class="stamp-info">
+
+                    <h2 class="stamp-title">
+                        ${stamp.title || "제목 없음"}
+                    </h2>
+
+                    <div class="stamp-design">
+                        ${stamp.design || ""}
+                    </div>
+
+                    <div class="stamp-meta">
+                        <div>
+                            발행일 : ${stamp.issueDate || "-"}
+                        </div>
+
+                        <div>
+                            액면가격 : ${stamp.faceValue || "-"}
+                        </div>
+
+                        <div>
+                            크기 : ${stamp.size || "-"}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="stamp-tags">
+                ${tags}
+            </div>
+        `;
+
+                list.appendChild(card);
+            });
+
+            displayedCount += nextItems.length;
+
+            isLoadingMore = false;
+        }
 
         // ========================================
         // 관련 키워드
@@ -474,6 +453,21 @@
 
         loadStamps();
 
+        window.addEventListener("scroll", function () {
+
+            const scrollPosition =
+                window.innerHeight + window.scrollY;
+
+            const documentHeight =
+                document.documentElement.scrollHeight;
+
+            // 페이지 하단 300px 전에 다음 10개 로딩
+            if (
+                scrollPosition >= documentHeight - 300
+            ) {
+                loadMoreStamps();
+            }
+        });
     </script>
 
 </body>
