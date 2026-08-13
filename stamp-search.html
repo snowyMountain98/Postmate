@@ -95,37 +95,137 @@
         // ========================================
 
         function searchStamps() {
-            const keyword =
-                document
-                    .getElementById("searchInput")
-                    .value
-                    .trim()
-                    .toLowerCase();
+            const keyword = document
+                .getElementById("searchInput")
+                .value
+                .trim()
+                .toLowerCase();
 
             if (!keyword) {
                 displayStamps(stamps);
                 return;
             }
 
-            const results = stamps.filter(stamp => {
+            const results = stamps
+                .map(stamp => {
 
-                const searchableText = [
-                    stamp.title,
-                    stamp.design,
-                    stamp.issueDate,
-                    stamp.faceValue,
-                    stamp.size,
-                    stamp.description,
-                    ...(Array.isArray(stamp.keywords)
-                        ? stamp.keywords
-                        : [])
-                ]
-                    .filter(Boolean)
-                    .join(" ")
-                    .toLowerCase();
+                    const design = String(stamp.design || "").toLowerCase();
+                    const title = String(stamp.title || "").toLowerCase();
 
-                return searchableText.includes(keyword);
-            });
+                    const keywords = Array.isArray(stamp.keywords)
+                        ? stamp.keywords.join(" ").toLowerCase()
+                        : "";
+
+                    const description = String(
+                        stamp.description || ""
+                    ).toLowerCase();
+
+                    const other = [
+                        stamp.issueDate,
+                        stamp.faceValue,
+                        stamp.size,
+                        stamp.id
+                    ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .toLowerCase();
+
+
+                    let score = 0;
+
+
+                    // ========================================
+                    // 1순위 : 디자인
+                    // ========================================
+
+                    if (design.includes(keyword)) {
+                        score += 500;
+
+                        // 정확히 일치하면 추가 점수
+                        if (design === keyword) {
+                            score += 100;
+                        }
+
+                        // 앞부분에 있으면 추가 점수
+                        if (design.startsWith(keyword)) {
+                            score += 50;
+                        }
+                    }
+
+
+                    // ========================================
+                    // 2순위 : 제목
+                    // ========================================
+
+                    if (title.includes(keyword)) {
+                        score += 400;
+
+                        if (title === keyword) {
+                            score += 100;
+                        }
+
+                        if (title.startsWith(keyword)) {
+                            score += 50;
+                        }
+                    }
+
+
+                    // ========================================
+                    // 3순위 : 태그
+                    // ========================================
+
+                    if (keywords.includes(keyword)) {
+                        score += 300;
+
+                        // 태그 하나가 검색어와 정확히 일치
+                        const exactKeyword = (
+                            stamp.keywords || []
+                        ).some(
+                            tag =>
+                                String(tag)
+                                    .toLowerCase()
+                                    .trim() === keyword
+                        );
+
+                        if (exactKeyword) {
+                            score += 100;
+                        }
+                    }
+
+
+                    // ========================================
+                    // 4순위 : 상세 설명
+                    // ========================================
+
+                    if (description.includes(keyword)) {
+                        score += 200;
+                    }
+
+
+                    // ========================================
+                    // 5순위 : 기타 정보
+                    // ========================================
+
+                    if (other.includes(keyword)) {
+                        score += 100;
+                    }
+
+
+                    return {
+                        stamp,
+                        score
+                    };
+                })
+
+                // 검색어가 하나도 없는 우표 제거
+                .filter(item => item.score > 0)
+
+                // 점수가 높은 순서
+                .sort((a, b) => b.score - a.score)
+
+                // 우표 데이터만 반환
+                .map(item => item.stamp);
+
 
             displayStamps(results);
         }
