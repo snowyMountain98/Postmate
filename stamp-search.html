@@ -144,16 +144,6 @@
 
                     if (design.includes(keyword)) {
                         score += 500;
-
-                        // 정확히 일치하면 추가 점수
-                        if (design === keyword) {
-                            score += 100;
-                        }
-
-                        // 앞부분에 있으면 추가 점수
-                        if (design.startsWith(keyword)) {
-                            score += 50;
-                        }
                     }
 
 
@@ -163,14 +153,6 @@
 
                     if (title.includes(keyword)) {
                         score += 400;
-
-                        if (title === keyword) {
-                            score += 100;
-                        }
-
-                        if (title.startsWith(keyword)) {
-                            score += 50;
-                        }
                     }
 
 
@@ -180,20 +162,6 @@
 
                     if (keywords.includes(keyword)) {
                         score += 300;
-
-                        // 태그 하나가 검색어와 정확히 일치
-                        const exactKeyword = (
-                            stamp.keywords || []
-                        ).some(
-                            tag =>
-                                String(tag)
-                                    .toLowerCase()
-                                    .trim() === keyword
-                        );
-
-                        if (exactKeyword) {
-                            score += 100;
-                        }
                     }
 
 
