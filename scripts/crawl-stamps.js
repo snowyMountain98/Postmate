@@ -604,10 +604,13 @@ async function collectAllDetailUrls(
         }
 
 
-        const currentSorted = pageCandidates.map(candidate => candidate.id).sort();
+        // 목록 페이지의 우표번호는 신뢰하지 않고 상세 URL 자체를 페이지 비교 기준으로 사용합니다.
+        // 실제 신규 여부는 상세 페이지의 XPATH.id 값을 기준으로 최종 판별합니다.
+        const currentSorted = pageCandidates.map(candidate => candidate.url).sort();
 
-
-        const previousSorted = previousPageCandidates ? previousPageCandidates.map(candidate => candidate.id).sort() : null;
+        const previousSorted = previousPageCandidates
+            ? previousPageCandidates.map(candidate => candidate.url).sort()
+            : null;
 
 
         const sameAsPrevious =
@@ -642,19 +645,15 @@ async function collectAllDetailUrls(
 
 
         pageCandidates.forEach(candidate => {
+            // 상세 URL이 서로 다른 항목은 모두 보존합니다.
+            // 목록 페이지에서 잘못 추출된 우표번호가 같더라도 누락되지 않도록 합니다.
+            const key = candidate.url;
 
-                if (
-                    !allCandidates.has(candidate.id)
-                ) {
-
-                    allCandidates.set(candidate.id, candidate);
-
-                    newUrlCount++;
-
-                }
-
+            if (!allCandidates.has(key)) {
+                allCandidates.set(key, candidate);
+                newUrlCount++;
             }
-        );
+        });
 
 
         console.log(
@@ -1301,27 +1300,33 @@ async function main() {
                     .map(stamp => String(stamp.id).trim())
             );
 
-        const newCandidates =
-            detailCandidates.filter(
-                candidate => !existingIds.has(candidate.id)
-            );
-
         console.log("");
-        console.log(`기존 우표: ${existingIds.size}개`);
-        console.log(`신규 우표: ${newCandidates.length}개`);
-        console.log(`상세 페이지 요청 생략: ${detailCandidates.length - newCandidates.length}개`);
+        console.log(
+            "상세 페이지의 우표번호 XPath를 기준으로 신규 여부를 판별합니다."
+        );
+        console.log(
+            `상세 페이지 XPath: ${XPATH.id}`
+        );
+        console.log(
+            "목록 페이지에서 추출한 우표번호는 신규 여부 판별에 사용하지 않습니다."
+        );
 
+        // 목록 페이지의 번호가 잘못 추출되어 기존 번호와 겹치더라도
+        // 상세 페이지의 실제 우표번호를 확인할 수 있도록 모든 상세 URL을 요청합니다.
         const stamps =
             await processInBatches(
-                newCandidates.map(candidate => candidate.url)
+                detailCandidates.map(candidate => candidate.url)
             );
-
 
         const validStamps =
-            stamps.filter(
-                Boolean
-            );
+            stamps.filter(Boolean);
 
+        // 상세 페이지의 XPATH.id에서 읽은 실제 우표번호가 기존 데이터에 없을 때만 신규로 추가합니다.
+        const newStamps =
+            validStamps.filter(stamp => {
+                const id = String(stamp.id || "").trim();
+                return id && !existingIds.has(id);
+            });
 
         console.log("");
         console.log(
@@ -1329,17 +1334,23 @@ async function main() {
         );
 
         console.log(
-            `요청: ${newCandidates.length}`
+            `상세 페이지 요청: ${detailCandidates.length}`
         );
 
         console.log(
-            `성공: ${validStamps.length}`
+            `상세 페이지 성공: ${validStamps.length}`
         );
 
         console.log(
-            `실패: ${
-                newCandidates.length - validStamps.length
-            }`
+            `신규 우표: ${newStamps.length}`
+        );
+
+        console.log(
+            `기존 우표로 확인된 항목: ${validStamps.length - newStamps.length}`
+        );
+
+        console.log(
+            `실패: ${detailCandidates.length - validStamps.length}`
         );
 
 
@@ -1348,7 +1359,7 @@ async function main() {
         // ==================================================
 
         mergeExistingKeywords(
-            validStamps,
+            newStamps,
             existingStamps
         );
 
@@ -1361,7 +1372,7 @@ async function main() {
             removeDuplicateById(
                 [
                     ...existingStamps,
-                    ...validStamps
+                    ...newStamps
                 ]
             );
 
