@@ -1,5 +1,6 @@
 const fs = require("fs");
 const OpenAI = require("openai");
+const sharp = require("sharp");
 
 const INPUT_FILE = "stamp-data.json";
 
@@ -678,37 +679,60 @@ async function downloadImageAsDataUrl(stamp) {
       const arrayBuffer =
         await response.arrayBuffer();
 
-      const buffer =
+      const originalBuffer =
         Buffer.from(arrayBuffer);
 
 
-      if (!buffer.length) {
+      if (!originalBuffer.length) {
         throw new Error(
           "이미지 응답이 비어 있습니다."
         );
       }
 
 
-      const mimeType =
+      const originalMimeType =
         getImageMimeType(
-          buffer,
+          originalBuffer,
           contentType
         );
 
 
-      if (!mimeType) {
+      if (!originalMimeType) {
         throw new Error(
-          `유효한 이미지가 아닙니다. Content-Type: ${contentType || "없음"}, 크기: ${buffer.length} bytes`
+          `유효한 이미지가 아닙니다. Content-Type: ${contentType || "없음"}, 크기: ${originalBuffer.length} bytes`
         );
       }
 
 
+      // 원본 JPEG를 그대로 OpenAI에 전달하면
+      // 일부 JPEG 인코딩/색상 프로파일 때문에
+      // "valid image" 오류가 발생할 수 있습니다.
+      // 표준 RGB JPEG로 다시 인코딩하여 전달합니다.
+      const buffer =
+        await sharp(originalBuffer, {
+          failOn: "warning"
+        })
+          .rotate()
+          .flatten({
+            background: "#ffffff"
+          })
+          .jpeg({
+            quality: 90,
+            mozjpeg: true
+          })
+          .toBuffer();
+
+
       console.log(
-        `이미지 다운로드 성공: ${stamp.id} / ${mimeType} / ${buffer.length} bytes`
+        `이미지 다운로드 성공: ${stamp.id} / 원본 ${originalMimeType} / ${originalBuffer.length} bytes`
+      );
+
+      console.log(
+        `OpenAI 전달용 이미지 변환 완료: image/jpeg / ${buffer.length} bytes`
       );
 
 
-      return `data:${mimeType};base64,${buffer.toString("base64")}`;
+      return `data:image/jpeg;base64,${buffer.toString("base64")}`;
 
     } catch (error) {
 
