@@ -554,10 +554,80 @@ KRW 1000
 
 
 // ==================================================
-// OpenAI Vision
+// 이미지 다운로드
 // ==================================================
 
-async function generateKeywords(stamp) {
+function getImageMimeType(buffer, contentType) {
+
+  const normalizedType =
+    String(contentType || "")
+      .split(";")[0]
+      .trim()
+      .toLowerCase();
+
+  if (
+    [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp"
+    ].includes(normalizedType)
+  ) {
+    return normalizedType;
+  }
+
+  // 서버가 Content-Type을 잘못 내려주는 경우를 대비하여
+  // 실제 파일 헤더도 확인합니다.
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return "image/jpeg";
+  }
+
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  if (
+    buffer.length >= 6 &&
+    buffer.toString("ascii", 0, 6) === "GIF87a"
+  ) {
+    return "image/gif";
+  }
+
+  if (
+    buffer.length >= 6 &&
+    buffer.toString("ascii", 0, 6) === "GIF89a"
+  ) {
+    return "image/gif";
+  }
+
+  if (
+    buffer.length >= 12 &&
+    buffer.toString("ascii", 0, 4) === "RIFF" &&
+    buffer.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+
+  return null;
+}
+
+
+async function downloadImageAsDataUrl(stamp) {
 
   if (!stamp.image) {
     throw new Error(
@@ -566,8 +636,136 @@ async function generateKeywords(stamp) {
   }
 
 
+  for (
+    let attempt = 0;
+    attempt <= MAX_RETRIES;
+    attempt++
+  ) {
+
+    try {
+
+      const response =
+        await fetch(
+          stamp.image,
+          {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
+              "Accept":
+                "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+              "Accept-Language":
+                "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+            },
+            signal:
+              AbortSignal.timeout(30000)
+          }
+        );
+
+
+      const contentType =
+        response.headers.get(
+          "content-type"
+        ) || "";
+
+
+      if (!response.ok) {
+        throw new Error(
+          `이미지 다운로드 HTTP ${response.status} / Content-Type: ${contentType || "없음"}`
+        );
+      }
+
+
+      const arrayBuffer =
+        await response.arrayBuffer();
+
+      const buffer =
+        Buffer.from(arrayBuffer);
+
+
+      if (!buffer.length) {
+        throw new Error(
+          "이미지 응답이 비어 있습니다."
+        );
+      }
+
+
+      const mimeType =
+        getImageMimeType(
+          buffer,
+          contentType
+        );
+
+
+      if (!mimeType) {
+        throw new Error(
+          `유효한 이미지가 아닙니다. Content-Type: ${contentType || "없음"}, 크기: ${buffer.length} bytes`
+        );
+      }
+
+
+      console.log(
+        `이미지 다운로드 성공: ${stamp.id} / ${mimeType} / ${buffer.length} bytes`
+      );
+
+
+      return `data:${mimeType};base64,${buffer.toString("base64")}`;
+
+    } catch (error) {
+
+      console.error(
+        `이미지 다운로드 실패: ${stamp.id} / ${stamp.title}`
+      );
+
+      console.error(
+        `URL: ${stamp.image}`
+      );
+
+      console.error(
+        error.message
+      );
+
+
+      if (
+        attempt >= MAX_RETRIES
+      ) {
+        throw error;
+      }
+
+
+      const wait =
+        2000 * (attempt + 1);
+
+
+      console.log(
+        `이미지 ${wait / 1000}초 후 재시도...`
+      );
+
+
+      await sleep(wait);
+    }
+  }
+
+
+  throw new Error(
+    "이미지 다운로드에 실패했습니다."
+  );
+}
+
+
+// ==================================================
+// OpenAI Vision
+// ==================================================
+
+async function generateKeywords(stamp) {
+
   const prompt =
     buildPrompt(stamp);
+
+  // OpenAI 서버가 stamp.epost.go.kr의 이미지를
+  // 직접 가져오도록 하지 않고, GitHub Actions 러너에서
+  // 먼저 다운로드한 뒤 Base64 Data URL로 전달합니다.
+  const imageDataUrl =
+    await downloadImageAsDataUrl(stamp);
 
 
   for (
@@ -597,7 +795,7 @@ async function generateKeywords(stamp) {
 
                 {
                   type: "input_image",
-                  image_url: stamp.image
+                  image_url: imageDataUrl
                 }
 
               ]
@@ -658,7 +856,6 @@ async function generateKeywords(stamp) {
 
   return [];
 }
-
 
 // ==================================================
 // 동시 처리
