@@ -94,11 +94,17 @@
             }
 
             function clearAll() {
+                if (!confirm("입력한 우표 금액을 모두 초기화할까요?")) {
+                    return;
+                }
+
                 numbers = [];
 
                 updateScreen();
 
                 document.getElementById("result").innerHTML = "아직 찾지 못했습니다.";
+
+                numberInput.focus();
             }
 
             function findCombination() {
