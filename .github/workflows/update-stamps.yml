@@ -28,6 +28,50 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Diagnose stamp.epost.go.kr connection
+        run: |
+          set +e
+
+          echo "========================================"
+          echo "stamp.epost.go.kr 연결 진단"
+          echo "========================================"
+
+          echo ""
+          echo "=== DNS ==="
+          getent hosts stamp.epost.go.kr
+          echo "DNS exit code: $?"
+
+          echo ""
+          echo "=== IPv4 CURL ==="
+          curl -4 -L -v --connect-timeout 30 --max-time 60 \
+            -A "Mozilla/5.0" \
+            -o /tmp/stamp-ipv4.html \
+            "https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp"
+          IPV4_CODE=$?
+          echo "IPv4 curl exit code: $IPV4_CODE"
+          if [ -f /tmp/stamp-ipv4.html ]; then
+            echo "IPv4 response size: $(wc -c < /tmp/stamp-ipv4.html) bytes"
+          fi
+
+          echo ""
+          echo "=== IPv6 CURL ==="
+          curl -6 -L -v --connect-timeout 30 --max-time 60 \
+            -A "Mozilla/5.0" \
+            -o /tmp/stamp-ipv6.html \
+            "https://stamp.epost.go.kr/sp2/sg/spsg0101.jsp"
+          IPV6_CODE=$?
+          echo "IPv6 curl exit code: $IPV6_CODE"
+          if [ -f /tmp/stamp-ipv6.html ]; then
+            echo "IPv6 response size: $(wc -c < /tmp/stamp-ipv6.html) bytes"
+          fi
+
+          echo ""
+          echo "=== CURL RESULT SUMMARY ==="
+          echo "IPv4 curl exit code: $IPV4_CODE"
+          echo "IPv6 curl exit code: $IPV6_CODE"
+          echo ""
+          echo "진단 단계는 결과와 관계없이 계속 진행합니다."
+
       - name: Crawl New Stamps
         env:
           MAX_PAGES: "0"
