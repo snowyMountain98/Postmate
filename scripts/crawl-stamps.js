@@ -390,26 +390,59 @@ function extractDetailCandidates(
         const url = toAbsoluteUrl(href);
         if (!url) return;
 
-        const row = link.closest("tr");
-        if (!row) return;
+        // 우체국 목록 페이지의 상세 링크는 href 구조가 변경될 수 있으므로
+        // 링크가 속한 행에서 ID를 추측하지 않고 href 자체의 파라미터를 우선 확인합니다.
+        let stampId = "";
 
-        const numericValues =
-            Array.from(row.querySelectorAll("td"))
-                .map(cell => cleanText(cell.textContent))
-                .filter(value => /^\d{4,}$/.test(value));
+        try {
+            const parsedUrl = new URL(url);
+            const params = parsedUrl.searchParams;
 
-        const stampId =
-            numericValues.length >= 2
-                ? numericValues[1]
-                : "";
+            const idParamNames = [
+                "seq",
+                "stampId",
+                "stampID",
+                "issueNo",
+                "issueNum",
+                "no",
+                "id"
+            ];
 
-        if (!stampId) {
-            console.warn("우표번호를 찾지 못했습니다: " + url);
-            return;
+            for (const name of idParamNames) {
+                const value = params.get(name);
+                if (value && /^\d{4,}$/.test(value.trim())) {
+                    stampId = value.trim();
+                    break;
+                }
+            }
+        } catch {
+            // 아래 DOM 기반 탐색으로 fallback
         }
 
+        // href에 ID가 없는 경우 링크/행 내부에서 숫자 값을 찾습니다.
+        if (!stampId) {
+            const row = link.closest("tr");
+
+            if (row) {
+                const cells = Array.from(row.querySelectorAll("td"))
+                    .map(cell => cleanText(cell.textContent));
+
+                // 기존 구조뿐 아니라 숫자만 있는 셀을 모두 후보로 사용합니다.
+                const numericValues = cells.filter(value =>
+                    /^\d{4,}$/.test(value)
+                );
+
+                if (numericValues.length > 0) {
+                    // 일반적으로 우표번호는 목록의 앞쪽 숫자 컬럼입니다.
+                    stampId = numericValues[0];
+                }
+            }
+        }
+
+        // ID를 찾지 못해도 URL 자체는 수집합니다.
+        // 상세 페이지에서 실제 ID를 파싱할 수 있으므로 URL을 버리지 않습니다.
         candidates.push({
-            id: String(stampId).trim(),
+            id: stampId ? String(stampId).trim() : "",
             url
         });
     });
@@ -417,8 +450,19 @@ function extractDetailCandidates(
     const unique = new Map();
 
     candidates.forEach(candidate => {
-        if (!unique.has(candidate.id)) {
-            unique.set(candidate.id, candidate);
+        // ID가 있으면 ID 기준으로 중복 제거합니다.
+        if (candidate.id) {
+            if (!unique.has(candidate.id)) {
+                unique.set(candidate.id, candidate);
+            }
+            return;
+        }
+
+        // ID를 목록에서 찾지 못한 링크는 URL 기준으로 중복 제거합니다.
+        const key = candidate.url;
+
+        if (!unique.has(key)) {
+            unique.set(key, candidate);
         }
     });
 
