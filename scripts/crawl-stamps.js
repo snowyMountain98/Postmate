@@ -375,62 +375,54 @@ function getXPathAttribute(
 // 목록 페이지에서 상세 URL 추출
 // ==================================================
 
-function extractDetailUrls(
+function extractDetailCandidates(
     html
 ) {
-
-    const dom =
-        new JSDOM(html);
-
-
-    const document =
-        dom.window.document;
-
-
-    const links =
-        document.querySelectorAll(
-            "a[href*='spsg0102.jsp']"
-        );
-
-
-    const urls =
-        new Set();
-
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    const links = document.querySelectorAll("a[href*='spsg0102.jsp']");
+    const candidates = [];
 
     links.forEach(link => {
+        const href = link.getAttribute("href");
+        if (!href) return;
 
-        const href =
-            link.getAttribute(
-                "href"
-            );
+        const url = toAbsoluteUrl(href);
+        if (!url) return;
 
+        const row = link.closest("tr");
+        if (!row) return;
 
-        if (!href) {
+        const numericValues =
+            Array.from(row.querySelectorAll("td"))
+                .map(cell => cleanText(cell.textContent))
+                .filter(value => /^\d{4,}$/.test(value));
 
+        const stampId =
+            numericValues.length >= 2
+                ? numericValues[1]
+                : "";
+
+        if (!stampId) {
+            console.warn("우표번호를 찾지 못했습니다: " + url);
             return;
-
         }
 
-
-        const url =
-            toAbsoluteUrl(
-                href
-            );
-
-
-        if (url) {
-
-            urls.add(url);
-
-        }
-
+        candidates.push({
+            id: String(stampId).trim(),
+            url
+        });
     });
 
+    const unique = new Map();
 
-    return Array.from(
-        urls
-    );
+    candidates.forEach(candidate => {
+        if (!unique.has(candidate.id)) {
+            unique.set(candidate.id, candidate);
+        }
+    });
 
+    return Array.from(unique.values());
 }
 
 
@@ -471,13 +463,13 @@ async function collectAllDetailUrls(
     firstPageHtml
 ) {
 
-    const allUrls =
-        new Set();
+    const allCandidates =
+        new Map();
 
 
     let page = 1;
 
-    let previousPageUrls = null;
+    let previousPageCandidates = null;
 
 
     while (true) {
@@ -541,19 +533,19 @@ async function collectAllDetailUrls(
         }
 
 
-        const pageUrls =
-            extractDetailUrls(
+        const pageCandidates =
+            extractDetailCandidates(
                 pageHtml
             );
 
 
         console.log(
-            `${page}페이지 상세 URL: ${pageUrls.length}개`
+            `${page}페이지 상세 URL: ${pageCandidates.length}개`
         );
 
 
         if (
-            pageUrls.length === 0
+            pageCandidates.length === 0
         ) {
 
             console.log(
@@ -565,14 +557,10 @@ async function collectAllDetailUrls(
         }
 
 
-        const currentSorted =
-            [...pageUrls].sort();
+        const currentSorted = pageCandidates.map(candidate => candidate.id).sort();
 
 
-        const previousSorted =
-            previousPageUrls
-                ? [...previousPageUrls].sort()
-                : null;
+        const previousSorted = previousPageCandidates ? previousPageCandidates.map(candidate => candidate.id).sort() : null;
 
 
         const sameAsPrevious =
@@ -606,14 +594,13 @@ async function collectAllDetailUrls(
         let newUrlCount = 0;
 
 
-        pageUrls.forEach(
-            url => {
+        pageCandidates.forEach(candidate => {
 
                 if (
-                    !allUrls.has(url)
+                    !allCandidates.has(candidate.id)
                 ) {
 
-                    allUrls.add(url);
+                    allCandidates.set(candidate.id, candidate);
 
                     newUrlCount++;
 
@@ -628,7 +615,7 @@ async function collectAllDetailUrls(
         );
 
         console.log(
-            `누적 상세 URL: ${allUrls.size}개`
+            `누적 상세 URL: ${allCandidates.size}개`
         );
 
 
@@ -646,8 +633,8 @@ async function collectAllDetailUrls(
         }
 
 
-        previousPageUrls =
-            pageUrls;
+        previousPageCandidates =
+            pageCandidates;
 
 
         page++;
@@ -660,9 +647,7 @@ async function collectAllDetailUrls(
     }
 
 
-    return Array.from(
-        allUrls
-    );
+    return Array.from(allCandidates.values());
 
 }
 
@@ -1161,7 +1146,7 @@ async function main() {
         );
 
         console.log(
-            "K-stamp 전체 우표 크롤링"
+            "K-stamp 신규 우표 증분 크롤링"
         );
 
         console.log(
@@ -1221,7 +1206,7 @@ async function main() {
         // 전체 목록 페이지
         // ==================================================
 
-        const detailUrls =
+        const detailCandidates =
             await collectAllDetailUrls(
                 firstPageHtml
             );
@@ -1233,7 +1218,7 @@ async function main() {
         );
 
         console.log(
-            `전체 상세 페이지: ${detailUrls.length}개`
+            `전체 상세 페이지: ${detailCandidates.length}개`
         );
 
         console.log(
@@ -1242,7 +1227,7 @@ async function main() {
 
 
         if (
-            detailUrls.length === 0
+            detailCandidates.length === 0
         ) {
 
             throw new Error(
@@ -1262,9 +1247,26 @@ async function main() {
         );
 
 
+        const existingIds =
+            new Set(
+                existingStamps
+                    .filter(stamp => stamp && stamp.id)
+                    .map(stamp => String(stamp.id).trim())
+            );
+
+        const newCandidates =
+            detailCandidates.filter(
+                candidate => !existingIds.has(candidate.id)
+            );
+
+        console.log("");
+        console.log(`기존 우표: ${existingIds.size}개`);
+        console.log(`신규 우표: ${newCandidates.length}개`);
+        console.log(`상세 페이지 요청 생략: ${detailCandidates.length - newCandidates.length}개`);
+
         const stamps =
             await processInBatches(
-                detailUrls
+                newCandidates.map(candidate => candidate.url)
             );
 
 
@@ -1280,7 +1282,7 @@ async function main() {
         );
 
         console.log(
-            `요청: ${detailUrls.length}`
+            `요청: ${newCandidates.length}`
         );
 
         console.log(
@@ -1289,8 +1291,7 @@ async function main() {
 
         console.log(
             `실패: ${
-                detailUrls.length -
-                validStamps.length
+                newCandidates.length - validStamps.length
             }`
         );
 
@@ -1311,7 +1312,10 @@ async function main() {
 
         const uniqueStamps =
             removeDuplicateById(
-                validStamps
+                [
+                    ...existingStamps,
+                    ...validStamps
+                ]
             );
 
 
@@ -1350,7 +1354,7 @@ async function main() {
         );
 
         console.log(
-            "✓ K-stamp 전체 크롤링 완료"
+            "✓ K-stamp 신규 우표 증분 크롤링 완료"
         );
 
         console.log(
