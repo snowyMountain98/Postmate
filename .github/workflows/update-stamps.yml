@@ -74,6 +74,7 @@ jobs:
 
       - name: Crawl New Stamps
         env:
+          NODE_OPTIONS: "--dns-result-order=ipv4first"
           MAX_PAGES: "0"
           CONCURRENCY: "3"
           REQUEST_DELAY: "500"
