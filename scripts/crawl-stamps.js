@@ -1,4 +1,7 @@
 const fs = require("fs");
+const dns = require("node:dns");
+
+dns.setDefaultResultOrder("ipv4first");
 const { JSDOM } = require("jsdom");
 const xpath = require("xpath");
 
