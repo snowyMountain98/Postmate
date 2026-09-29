@@ -2,7 +2,7 @@ name: Update Stamp Data
 
 on:
   schedule:
-    - cron: "15 10 * * 3"
+    - cron: "*/10 * * * *"
       timezone: "Asia/Seoul"
   workflow_dispatch:
 
