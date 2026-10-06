@@ -309,9 +309,8 @@
 
                         if (colorKeywords.has(normalizedKeyword)) {
                             return `
-                                <span class="stamp-color-tag" title="${normalizedKeyword}">
+                                <span class="stamp-color-tag" title="${normalizedKeyword}" aria-label="${normalizedKeyword}">
                                     <span class="stamp-color-dot stamp-color-${colorMap[normalizedKeyword]}" aria-hidden="true"></span>
-                                    <span class="stamp-color-name">${normalizedKeyword}</span>
                                 </span>
                             `;
                         }
