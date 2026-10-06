@@ -1,0 +1,113 @@
+name: Monitor Maximum Cards
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    name: Check Maximum Card Status
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check maximum cards
+        env:
+          MAX_PAGES: "50"
+          REQUEST_DELAY: "700"
+        run: node scripts/monitor-maximum-cards.js
+
+      - name: Send Discord notification
+        if: success()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+
+          const webhook = process.env.DISCORD_WEBHOOK_URL;
+
+          if (!webhook) {
+            console.log("DISCORD_WEBHOOK_URL이 없어 Discord 알림을 건너뜁니다.");
+            process.exit(0);
+          }
+
+          if (!fs.existsSync("maximum-card-alerts.json")) {
+            console.log("알림 파일이 없어 종료합니다.");
+            process.exit(0);
+          }
+
+          const data = JSON.parse(
+            fs.readFileSync("maximum-card-alerts.json", "utf8")
+          );
+
+          const alerts = Array.isArray(data.alerts)
+            ? data.alerts
+            : [];
+
+          if (alerts.length === 0) {
+            console.log("새로운 판매 가능 맥시멈카드가 없습니다.");
+            process.exit(0);
+          }
+
+          const lines = alerts.map(alert =>
+            [
+              "📮 **맥시멈카드 판매 알림**",
+              "",
+              `**${alert.title}**`,
+              `상태: ${alert.previousStatus} → **${alert.currentStatus}**`,
+              alert.url || "우체국 우표·엽서류"
+            ].join("\n")
+          );
+
+          const response = await fetch(webhook, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              content: lines.join("\n\n")
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Discord webhook HTTP ${response.status}: ${await response.text()}`
+            );
+          }
+
+          console.log(`Discord 알림 전송 완료: ${alerts.length}건`);
+          NODE
+
+      - name: Commit status changes
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add maximum-card-status.json
+
+          if git diff --cached --quiet; then
+            echo "변경된 맥시멈카드 상태가 없습니다."
+          else
+            git commit -m "Update maximum card status"
+
+            git push \
+              https://${GH_PAT}@github.com/${GITHUB_REPOSITORY}.git \
+              HEAD:${GITHUB_REF_NAME}
+          fi
