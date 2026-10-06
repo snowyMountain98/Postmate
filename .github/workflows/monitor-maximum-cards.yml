@@ -30,7 +30,7 @@ jobs:
 
       - name: Check maximum cards
         env:
-          MAX_PAGES: "50"
+          MAX_PAGES: "0"
           REQUEST_DELAY: "700"
         run: node scripts/monitor-maximum-cards.js
 
