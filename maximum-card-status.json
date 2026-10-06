@@ -1,0 +1,39 @@
+{
+  "initialized": true,
+  "checkedAt": "2026-10-06T04:47:00.373Z",
+  "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal",
+  "excludedStatuses": [
+    "판매예정",
+    "판매완료"
+  ],
+  "items": [
+    {
+      "id": "F39273",
+      "title": "[맥시멈카드] 주시경 탄생 150돌",
+      "price": "3,400",
+      "issueDate": "2026.10.08",
+      "status": "판매예정",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
+    },
+    {
+      "id": "F39272",
+      "title": "[맥시멈카드] 주시경 탄생 150돌",
+      "price": "1,300",
+      "issueDate": "2026.10.08",
+      "status": "판매예정",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_expected.gif"
+    },
+    {
+      "id": "F39212",
+      "title": "[맥시멈카드] 한국의 단청",
+      "price": "7,800",
+      "issueDate": "2026.10.01",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    }
+  ],
+  "alerts": []
+}
