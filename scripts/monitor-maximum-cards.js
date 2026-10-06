@@ -180,7 +180,8 @@ function compare(previous, current) {
         previousByKey.set(item.id || item.url || item.title, item);
     }
 
-    const alerts = [...previous.alerts];
+    const history = [...previous.alerts];
+    const newAlerts = [];
 
     for (const currentItem of current) {
         const key = currentItem.id || currentItem.url || currentItem.title;
@@ -191,11 +192,13 @@ function compare(previous, current) {
         }
 
         const wasUnavailable = EXCLUDED_STATUS.has(oldItem.status);
-        const isNowAvailable = currentItem.status && !EXCLUDED_STATUS.has(currentItem.status);
+        const isNowAvailable =
+            currentItem.status &&
+            !EXCLUDED_STATUS.has(currentItem.status);
 
-        if (wasUnavailable && isNowAvailable && oldItem.status !== currentItem.status) {
-            alerts.push({
-                id: `${key}-${Date.now()}`,
+        if (wasUnavailable && isNowAvailable) {
+            newAlerts.push({
+                id: `${key}-${Date.now()}-${newAlerts.length}`,
                 itemKey: key,
                 title: currentItem.title,
                 previousStatus: oldItem.status,
@@ -206,22 +209,74 @@ function compare(previous, current) {
         }
     }
 
-    return alerts.slice(-30);
+    return {
+        alerts: [...history, ...newAlerts].slice(-30),
+        newAlerts
+    };
+}
+
+function extractPaginationUrls(html, currentUrl) {
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+    const urls = new Set();
+
+    for (const link of document.querySelectorAll("a[href]")) {
+        const href = String(link.getAttribute("href") || "").trim();
+
+        if (!href) {
+            continue;
+        }
+
+        try {
+            const url = new URL(href, currentUrl);
+
+            // 우표·엽서류 목록의 실제 페이징 링크입니다.
+            // 현재 페이지에서는 pageSpec=StyleNp2&targetRow=9 같은 형태를 사용합니다.
+            const isSameList =
+                url.hostname === new URL(LIST_URL).hostname &&
+                url.pathname === new URL(LIST_URL).pathname;
+
+            const isPagination =
+                /(?:^|[?&])pageSpec=[^&]*/i.test(url.search) &&
+                /(?:^|[?&])targetRow=\d+/i.test(url.search);
+
+            if (isSameList && isPagination) {
+                url.hash = "";
+                urls.add(url.href);
+            }
+        } catch {
+            // 잘못된 href는 무시합니다.
+        }
+    }
+
+    return Array.from(urls);
 }
 
 async function collectAllPages() {
     const all = new Map();
+    const visitedPages = new Set();
+    const queue = [LIST_URL];
 
-    for (let page = 1; page <= MAX_PAGES; page++) {
-        const url = new URL(LIST_URL);
+    let processedPages = 0;
 
-        if (page > 1) {
-            url.searchParams.set("currentPage", String(page));
+    while (queue.length > 0) {
+        if (MAX_PAGES > 0 && processedPages >= MAX_PAGES) {
+            console.log(`MAX_PAGES=${MAX_PAGES}에 도달했습니다.\n`);
+            break;
         }
 
-        console.log(`페이지 ${page}: ${url.href}`);
+        const url = queue.shift();
 
-        const html = await fetchHtml(url.href);
+        if (visitedPages.has(url)) {
+            continue;
+        }
+
+        visitedPages.add(url);
+        processedPages++;
+
+        console.log(`페이지 ${processedPages}: ${url}`);
+
+        const html = await fetchHtml(url);
         const cards = parseMaximumCards(html);
 
         console.log(`맥시멈카드 ${cards.length}개 발견`);
@@ -234,24 +289,25 @@ async function collectAllPages() {
             }
         }
 
-        const pageLinks = Array.from(new JSDOM(html).window.document.querySelectorAll("a[href]"))
-            .map(link => link.getAttribute("href"))
-            .filter(Boolean)
-            .filter(href => /currentPage=\d+/i.test(href));
+        const paginationUrls = extractPaginationUrls(html, url);
 
-        const pageNumbers = pageLinks
-            .map(href => {
-                const match = href.match(/currentPage=(\d+)/i);
-                return match ? Number(match[1]) : 0;
-            })
-            .filter(Boolean);
+        let addedCount = 0;
 
-        if (!pageNumbers.some(number => number > page)) {
-            break;
+        for (const pageUrl of paginationUrls) {
+            if (!visitedPages.has(pageUrl) && !queue.includes(pageUrl)) {
+                queue.push(pageUrl);
+                addedCount++;
+            }
         }
+
+        console.log(`발견된 미방문 페이지 링크: ${addedCount}개`);
+        console.log(`남은 페이지: ${queue.length}개`);
 
         await sleep(REQUEST_DELAY);
     }
+
+    console.log(`전체 페이지 탐색 완료: ${processedPages}페이지`);
+    console.log(`전체 맥시멈카드: ${all.size}개`);
 
     return Array.from(all.values());
 }
@@ -264,13 +320,12 @@ async function main() {
         throw new Error("맥시멈카드 데이터를 찾지 못했습니다. 우체국 페이지 구조가 변경되었을 수 있습니다.");
     }
 
-    const previousAlertCount = previous.alerts.length;
-
-    const alerts = previous.initialized
+    const comparison = previous.initialized
         ? compare(previous, current)
-        : [];
+        : { alerts: [], newAlerts: [] };
 
-    const newAlerts = alerts.slice(previousAlertCount);
+    const alerts = comparison.alerts;
+    const newAlerts = comparison.newAlerts;
 
     const stateChanged =
         !previous.initialized ||
