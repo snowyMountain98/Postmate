@@ -110,8 +110,7 @@ function parseMaximumCards(html) {
     const document = dom.window.document;
     const candidates = [];
 
-    // 초일봉투 목록의 개별 상품 이미지에서 "[맥시멈카드]" 상품만 직접 찾습니다.
-    // 상품 전체 영역을 잡지 않도록 가장 작은 상품 컨테이너까지 올라가서 파싱합니다.
+    // 초일봉투 탭에서 상품 이미지의 alt가 "[맥시멈카드] ..."인 상품만 선택합니다.
     const maximumImages = document.querySelectorAll('img[alt*="[맥시멈카드]"]');
 
     for (const image of maximumImages) {
@@ -119,53 +118,67 @@ function parseMaximumCards(html) {
 
         let container = image;
 
-        for (let depth = 0; depth < 12 && container; depth++, container = container.parentElement) {
+        // 가장 작은 "상품 1개" 블록을 찾습니다.
+        // 블록 안에는 맥시멈카드 이미지 1개와 상품번호(No.) 1개만 있어야 합니다.
+        for (let depth = 0; depth < 14 && container; depth++, container = container.parentElement) {
             const text = cleanText(container.textContent);
-            const maximumImageCount =
+
+            const productImages = container.querySelectorAll(
+                'img[alt*="[맥시멈카드]"], img[alt*="[묶음판매]"], img[alt*="[초일봉투]"]'
+            );
+
+            const noMatches = text.match(/No\.\s*[A-Z]?\d{4,}/ig) || [];
+            const maximumImagesInContainer =
                 container.querySelectorAll('img[alt*="[맥시멈카드]"]').length;
 
             if (
-                maximumImageCount !== 1 ||
-                !/No\.\s*[A-Z]?\d{4,}/i.test(text)
+                maximumImagesInContainer !== 1 ||
+                productImages.length !== 1 ||
+                noMatches.length !== 1
             ) {
                 continue;
             }
 
             const noMatch = text.match(/No\.\s*([A-Z]?\d{4,})/i);
-            const priceMatch = text.match(/([\d,]+)\s*원/);
+            const priceMatches = text.match(/([\d,]+)\s*원/g) || [];
             const dateMatch = text.match(
                 /발행일\s*:\s*(\d{4}\.\s*\d{1,2}\.\s*\d{1,2})/
             );
 
-            const statusImage =
-                container.querySelector(
-                    'img[alt*="판매예정"], img[alt*="판매완료"], img[alt*="판매중"]'
-                );
-
-            const detectedStatus = statusImage
-                ? cleanText(statusImage.getAttribute("alt"))
-                : "";
-
+            // 판매 상태 이미지는 상품 블록 안에 있거나 바로 상위 블록에 있을 수 있습니다.
+            // 현재 우체국 HTML 구조에서는 상품별 상태 이미지가 상품 정보와 함께 반복됩니다.
             let status = "";
 
-            if (detectedStatus.includes("판매예정")) {
-                status = "판매예정";
-            } else if (detectedStatus.includes("판매완료")) {
-                status = "판매완료";
-            } else if (detectedStatus.includes("판매중")) {
-                status = "판매중";
-            } else {
-                // 초일봉투 목록에서 판매 상태 이미지가 없는 상품은 구매 가능한 상품입니다.
+            const statusImage = container.querySelector(
+                'img[alt*="판매예정"], img[alt*="판매완료"], img[alt*="판매중"]'
+            );
+
+            if (statusImage) {
+                const alt = cleanText(statusImage.getAttribute("alt"));
+
+                if (alt.includes("판매예정")) {
+                    status = "판매예정";
+                } else if (alt.includes("판매완료")) {
+                    status = "판매완료";
+                } else if (alt.includes("판매중")) {
+                    status = "판매중";
+                }
+            }
+
+            // 판매 상태 이미지가 없는 맥시멈카드는 현재 구매 가능한 상태로 간주합니다.
+            if (!status) {
                 status = "판매중";
             }
 
             const linkElement = image.closest("a");
-            const imageElement = image;
 
             candidates.push({
                 id: noMatch ? noMatch[1] : "",
                 title,
-                price: priceMatch ? priceMatch[1] : "",
+                price: priceMatches.length > 0
+                    ? cleanText(priceMatches[priceMatches.length - 1])
+                        .replace(/\s*원$/, "")
+                    : "",
                 issueDate: dateMatch
                     ? dateMatch[1].replace(/\.\s*/g, ".")
                     : "",
@@ -173,7 +186,7 @@ function parseMaximumCards(html) {
                 url: linkElement
                     ? absoluteUrl(linkElement.getAttribute("href"))
                     : "",
-                image: absoluteUrl(imageElement.getAttribute("src") || "")
+                image: absoluteUrl(image.getAttribute("src") || "")
             });
 
             break;
@@ -283,21 +296,18 @@ function extractPaginationUrls(html, currentUrl) {
                 url.hostname === baseUrl.hostname &&
                 url.pathname === baseUrl.pathname;
 
-            const isSameTab =
-                url.searchParams.get("svctype") === LIST_SCOPE.svctype &&
-                url.searchParams.get("timediv") === LIST_SCOPE.timediv;
-
             const targetRow = url.searchParams.get("targetRow");
 
-            const isPagination =
-                isSameList &&
-                isSameTab &&
-                /^\d+$/.test(targetRow || "");
-
-            if (isPagination) {
-                url.hash = "";
-                urls.add(url.href);
+            if (!isSameList || !/^\d+$/.test(targetRow || "")) {
+                continue;
             }
+
+            // 우체국 페이지네이션 링크는 svctype/timediv를 href에 포함하지 않는 경우가 있습니다.
+            // 현재 감시 범위(초일봉투)를 잃지 않도록 강제로 유지합니다.
+            url.searchParams.set("svctype", LIST_SCOPE.svctype);
+            url.searchParams.set("timediv", LIST_SCOPE.timediv);
+
+            urls.add(url.href);
         } catch {
             // 잘못된 링크는 무시합니다.
         }
