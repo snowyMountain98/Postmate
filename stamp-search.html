@@ -26,6 +26,16 @@
             </button>
         </div>
 
+        <div class="color-filter">
+            <div class="color-filter-header">
+                <span class="color-filter-title">🎨 색상 필터</span>
+                <button type="button" id="clearColorFilter" class="color-filter-clear" onclick="clearColorFilters()">
+                    초기화
+                </button>
+            </div>
+            <div id="colorFilterList" class="color-filter-list"></div>
+        </div>
+
         <div id="searchInfo" class="search-info">
             우표 데이터를 불러오는 중...
         </div>
@@ -46,9 +56,32 @@
         let stamps = [];
         let currentResults = [];
         let displayedCount = 0;
+        const selectedColors = new Set();
 
         const STAMPS_PER_PAGE = 10;
         let isLoadingMore = false;
+
+        const colorDefinitions = [
+            { name: "빨강", className: "red", aliases: ["빨강"] },
+            { name: "파랑", className: "blue", aliases: ["파랑"] },
+            { name: "노랑", className: "yellow", aliases: ["노랑"] },
+            { name: "초록", className: "green", aliases: ["초록", "녹색"] },
+            { name: "주황", className: "orange", aliases: ["주황"] },
+            { name: "분홍", className: "pink", aliases: ["분홍"] },
+            { name: "보라", className: "purple", aliases: ["보라"] },
+            { name: "갈색", className: "brown", aliases: ["갈색"] },
+            { name: "검정", className: "black", aliases: ["검정"] },
+            { name: "흰색", className: "white", aliases: ["흰색"] },
+            { name: "회색", className: "gray", aliases: ["회색"] },
+            { name: "금색", className: "gold", aliases: ["금색"] },
+            { name: "은색", className: "silver", aliases: ["은색"] }
+        ];
+
+        const colorMap = Object.fromEntries(
+            colorDefinitions.flatMap(color =>
+                color.aliases.map(alias => [alias, color.className])
+            )
+        );
 
         // ========================================
         // 우표 데이터 불러오기
@@ -105,12 +138,16 @@
                 .trim()
                 .toLowerCase();
 
+            const colorFilteredStamps = stamps.filter(stamp =>
+                matchesSelectedColors(stamp)
+            );
+
             if (!keyword) {
-                displayStamps(stamps);
+                displayStamps(colorFilteredStamps);
                 return;
             }
 
-            const results = stamps
+            const results = colorFilteredStamps
                 .map(stamp => {
 
                     const design = String(stamp.design || "").toLowerCase();
@@ -240,8 +277,18 @@
 
             list.innerHTML = "";
 
+            const selectedColorNames = colorDefinitions
+                .filter(color => selectedColors.has(color.name))
+                .map(color => color.name);
+
+            const colorText = selectedColorNames.length
+                ? ` · ${selectedColorNames.join(" + ")} 필터`
+                : "";
+
             if (keyword) {
-                info.textContent = `"${keyword}" 검색 결과 ${results.length}개`;
+                info.textContent = `"${keyword}" 검색 결과 ${results.length}개${colorText}`;
+            } else if (selectedColorNames.length) {
+                info.textContent = `${selectedColorNames.join(" + ")} 필터 결과 ${results.length}개`;
             } else {
                 info.textContent = `전체 우표 ${results.length}개`;
             }
@@ -283,23 +330,6 @@
             nextItems.forEach(stamp => {
                 const card = document.createElement("div");
                 card.className = "stamp-card";
-
-                const colorMap = {
-                    "빨강": "red",
-                    "파랑": "blue",
-                    "노랑": "yellow",
-                    "초록": "green",
-                    "녹색": "green",
-                    "주황": "orange",
-                    "분홍": "pink",
-                    "보라": "purple",
-                    "갈색": "brown",
-                    "검정": "black",
-                    "흰색": "white",
-                    "회색": "gray",
-                    "금색": "gold",
-                    "은색": "silver"
-                };
 
                 const colorKeywords = new Set(Object.keys(colorMap));
 
@@ -373,6 +403,80 @@
             displayedCount += nextItems.length;
 
             isLoadingMore = false;
+        }
+
+        // ========================================
+        // 색상 필터
+        // ========================================
+
+        function renderColorFilters() {
+            const container = document.getElementById("colorFilterList");
+
+            container.innerHTML = colorDefinitions
+                .map(color => `
+                    <button
+                        type="button"
+                        class="color-filter-button"
+                        data-color="${color.name}"
+                        title="${color.aliases.join(" / ")}"
+                        aria-label="${color.aliases.join(" / ")} 색상 필터"
+                        aria-pressed="false"
+                        onclick="toggleColorFilter('${color.name}')"
+                    >
+                        <span class="stamp-color-dot stamp-color-${color.className}" aria-hidden="true"></span>
+                    </button>
+                `)
+                .join("");
+
+            updateColorFilterUI();
+        }
+
+        function toggleColorFilter(colorName) {
+            if (selectedColors.has(colorName)) {
+                selectedColors.delete(colorName);
+            } else {
+                selectedColors.add(colorName);
+            }
+
+            updateColorFilterUI();
+            searchStamps();
+        }
+
+        function clearColorFilters() {
+            selectedColors.clear();
+            updateColorFilterUI();
+            searchStamps();
+        }
+
+        function updateColorFilterUI() {
+            document.querySelectorAll(".color-filter-button").forEach(button => {
+                const colorName = button.dataset.color;
+                const isSelected = selectedColors.has(colorName);
+
+                button.classList.toggle("selected", isSelected);
+                button.setAttribute("aria-pressed", String(isSelected));
+            });
+
+            const clearButton = document.getElementById("clearColorFilter");
+            clearButton.disabled = selectedColors.size === 0;
+        }
+
+        function matchesSelectedColors(stamp) {
+            if (selectedColors.size === 0) {
+                return true;
+            }
+
+            const stampColors = new Set(
+                (stamp.keywords || []).map(keyword =>
+                    String(keyword).trim()
+                )
+            );
+
+            return colorDefinitions
+                .filter(color => selectedColors.has(color.name))
+                .every(color =>
+                    color.aliases.some(alias => stampColors.has(alias))
+                );
         }
 
         // ========================================
@@ -470,6 +574,7 @@
         // ========================================
 
         loadHeader();
+        renderColorFilters();
 
         loadStamps();
 
