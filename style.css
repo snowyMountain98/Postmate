@@ -613,3 +613,41 @@ button:active {
 
 
 }
+
+/* =========================================================
+우표 검색 - 색상 아이콘
+========================================================= */
+
+.stamp-color-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: #FFFFFF;
+    border: 2px solid #4B4453;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.stamp-color-dot {
+    display: block;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+}
+
+.stamp-color-red { background: #E74C3C; }
+.stamp-color-blue { background: #3498DB; }
+.stamp-color-yellow { background: #F1C40F; }
+.stamp-color-green { background: #2ECC71; }
+.stamp-color-orange { background: #E67E22; }
+.stamp-color-pink { background: #FF69B4; }
+.stamp-color-purple { background: #9B59B6; }
+.stamp-color-brown { background: #8B5A2B; }
+.stamp-color-black { background: #222222; }
+.stamp-color-white { background: #FFFFFF; border: 1px solid #999999; }
+.stamp-color-gray { background: #95A5A6; }
+.stamp-color-gold { background: #D4AF37; }
+.stamp-color-silver { background: #C0C0C0; }
