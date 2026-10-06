@@ -175,11 +175,11 @@
                 new Notification("📮 맥시멈카드 판매 알림", {
                     body: message
                 });
+            } else {
+                alert(
+                    "📮 맥시멈카드 판매 알림\n\n" + message
+                );
             }
-
-            alert(
-                "📮 맥시멈카드 판매 알림\n\n" + message
-            );
         }
 
         async function requestNotificationPermission() {
