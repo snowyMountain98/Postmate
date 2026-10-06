@@ -1,7 +1,11 @@
 const fs = require("fs");
 const { JSDOM } = require("jsdom");
 
-const LIST_URL = "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal";
+const LIST_URL = "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000";
+const LIST_SCOPE = {
+    svctype: "9",
+    timediv: "2000"
+};
 const OUTPUT_FILE = "maximum-card-status.json";
 const MAX_PAGES = Number(process.env.MAX_PAGES || 50);
 const REQUEST_DELAY = Number(process.env.REQUEST_DELAY || 700);
@@ -106,31 +110,73 @@ function parseMaximumCards(html) {
     const document = dom.window.document;
     const candidates = [];
 
-    const nodes = Array.from(document.querySelectorAll("*"))
-        .filter(node => cleanText(node.textContent).includes("[맥시멈카드]"));
+    // 초일봉투 목록의 개별 상품 이미지에서 "[맥시멈카드]" 상품만 직접 찾습니다.
+    // 상품 전체 영역을 잡지 않도록 가장 작은 상품 컨테이너까지 올라가서 파싱합니다.
+    const maximumImages = document.querySelectorAll('img[alt*="[맥시멈카드]"]');
 
-    for (const node of nodes) {
-        let container = node;
+    for (const image of maximumImages) {
+        const title = cleanText(image.getAttribute("alt"));
 
-        for (let depth = 0; depth < 8 && container; depth++, container = container.parentElement) {
+        let container = image;
+
+        for (let depth = 0; depth < 12 && container; depth++, container = container.parentElement) {
             const text = cleanText(container.textContent);
+            const maximumImageCount =
+                container.querySelectorAll('img[alt*="[맥시멈카드]"]').length;
 
-            if (!text.includes("[맥시멈카드]") || !/No\.\s*[A-Z]?\d{4,}/i.test(text)) {
+            if (
+                maximumImageCount !== 1 ||
+                !/No\.\s*[A-Z]?\d{4,}/i.test(text)
+            ) {
                 continue;
             }
 
-            const status = extractStatus(container);
+            const noMatch = text.match(/No\.\s*([A-Z]?\d{4,})/i);
+            const priceMatch = text.match(/([\d,]+)\s*원/);
+            const dateMatch = text.match(
+                /발행일\s*:\s*(\d{4}\.\s*\d{1,2}\.\s*\d{1,2})/
+            );
 
-            if (!status) {
-                continue;
+            const statusImage =
+                container.querySelector(
+                    'img[alt*="판매예정"], img[alt*="판매완료"], img[alt*="판매중"]'
+                );
+
+            const detectedStatus = statusImage
+                ? cleanText(statusImage.getAttribute("alt"))
+                : "";
+
+            let status = "";
+
+            if (detectedStatus.includes("판매예정")) {
+                status = "판매예정";
+            } else if (detectedStatus.includes("판매완료")) {
+                status = "판매완료";
+            } else if (detectedStatus.includes("판매중")) {
+                status = "판매중";
+            } else {
+                // 초일봉투 목록에서 판매 상태 이미지가 없는 상품은 구매 가능한 상품입니다.
+                status = "판매중";
             }
 
-            const card = extractCard(container);
+            const linkElement = image.closest("a");
+            const imageElement = image;
 
-            if (card) {
-                candidates.push(card);
-                break;
-            }
+            candidates.push({
+                id: noMatch ? noMatch[1] : "",
+                title,
+                price: priceMatch ? priceMatch[1] : "",
+                issueDate: dateMatch
+                    ? dateMatch[1].replace(/\.\s*/g, ".")
+                    : "",
+                status,
+                url: linkElement
+                    ? absoluteUrl(linkElement.getAttribute("href"))
+                    : "",
+                image: absoluteUrl(imageElement.getAttribute("src") || "")
+            });
+
+            break;
         }
     }
 
@@ -162,7 +208,8 @@ function loadPrevious() {
         return {
             initialized: Boolean(data.initialized),
             items: Array.isArray(data.items) ? data.items : [],
-            alerts: Array.isArray(data.alerts) ? data.alerts : []
+            alerts: Array.isArray(data.alerts) ? data.alerts : [],
+            sourceUrl: data.sourceUrl || ""
         };
     } catch {
         return {
@@ -220,6 +267,8 @@ function extractPaginationUrls(html, currentUrl) {
     const document = dom.window.document;
     const urls = new Set();
 
+    const baseUrl = new URL(LIST_URL);
+
     for (const link of document.querySelectorAll("a[href]")) {
         const href = String(link.getAttribute("href") || "").trim();
 
@@ -230,22 +279,27 @@ function extractPaginationUrls(html, currentUrl) {
         try {
             const url = new URL(href, currentUrl);
 
-            // 우표·엽서류 목록의 실제 페이징 링크입니다.
-            // 현재 페이지에서는 pageSpec=StyleNp2&targetRow=9 같은 형태를 사용합니다.
             const isSameList =
-                url.hostname === new URL(LIST_URL).hostname &&
-                url.pathname === new URL(LIST_URL).pathname;
+                url.hostname === baseUrl.hostname &&
+                url.pathname === baseUrl.pathname;
+
+            const isSameTab =
+                url.searchParams.get("svctype") === LIST_SCOPE.svctype &&
+                url.searchParams.get("timediv") === LIST_SCOPE.timediv;
+
+            const targetRow = url.searchParams.get("targetRow");
 
             const isPagination =
-                /(?:^|[?&])pageSpec=[^&]*/i.test(url.search) &&
-                /(?:^|[?&])targetRow=\d+/i.test(url.search);
+                isSameList &&
+                isSameTab &&
+                /^\d+$/.test(targetRow || "");
 
-            if (isSameList && isPagination) {
+            if (isPagination) {
                 url.hash = "";
                 urls.add(url.href);
             }
         } catch {
-            // 잘못된 href는 무시합니다.
+            // 잘못된 링크는 무시합니다.
         }
     }
 
@@ -320,9 +374,13 @@ async function main() {
         throw new Error("맥시멈카드 데이터를 찾지 못했습니다. 우체국 페이지 구조가 변경되었을 수 있습니다.");
     }
 
-    const comparison = previous.initialized
-        ? compare(previous, current)
-        : { alerts: [], newAlerts: [] };
+    const sameScope =
+        previous.sourceUrl === LIST_URL;
+
+    const comparison =
+        previous.initialized && sameScope
+            ? compare(previous, current)
+            : { alerts: [], newAlerts: [] };
 
     const alerts = comparison.alerts;
     const newAlerts = comparison.newAlerts;
