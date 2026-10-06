@@ -725,3 +725,65 @@ button:active {
 .stamp-color-gray { background: #95A5A6; }
 .stamp-color-gold { background: #D4AF37; }
 .stamp-color-silver { background: #C0C0C0; }
+
+
+/* =========================================================
+맥시멈카드 알림
+========================================================= */
+
+.maximum-alert-box {
+    margin-bottom: 24px;
+    padding: 18px;
+    background: #FFFFFF;
+    border: 4px solid #4B4453;
+    box-shadow: 6px 6px 0 #4B4453;
+}
+
+.maximum-alert-title {
+    margin-bottom: 8px;
+    font-size: 24px;
+    color: #5B4B8A;
+}
+
+.maximum-alert-description {
+    margin-bottom: 14px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #777;
+}
+
+.maximum-notification-button {
+    width: 100%;
+    padding: 11px 14px;
+    font-size: 18px;
+    background: #B8F2E6;
+    border: 3px solid #4B4453;
+    box-shadow: 4px 4px 0 #4B4453;
+}
+
+.maximum-notification-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.maximum-sale-status {
+    margin-bottom: 8px;
+    font-size: 17px;
+}
+
+.maximum-buy-link {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 7px 10px;
+    text-decoration: none;
+    color: #4B4453;
+    background: #FFD6A5;
+    border: 2px solid #4B4453;
+    box-shadow: 3px 3px 0 #4B4453;
+}
+
+.maximum-buy-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #4B4453;
+}
+
