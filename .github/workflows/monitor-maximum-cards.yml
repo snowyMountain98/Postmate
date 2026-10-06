@@ -74,28 +74,28 @@ jobs:
             ].join("\n")
           );
 
-          (async () => {
-            const response = await fetch(webhook, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                content: lines.join("\n\n")
-              })
+          fetch(webhook, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              content: lines.join("\n\n")
+            })
+          })
+            .then(async response => {
+              if (!response.ok) {
+                throw new Error(
+                  `Discord webhook HTTP ${response.status}: ${await response.text()}`
+                );
+              }
+
+              console.log(`Discord 알림 전송 완료: ${alerts.length}건`);
+            })
+            .catch(error => {
+              console.error(error);
+              process.exit(1);
             });
-
-            if (!response.ok) {
-              throw new Error(
-                `Discord webhook HTTP ${response.status}: ${await response.text()}`
-              );
-            }
-
-            console.log(`Discord 알림 전송 완료: ${alerts.length}건`);
-          })().catch(error => {
-            console.error(error);
-            process.exit(1);
-          });
           NODE
 
       - name: Commit status changes
