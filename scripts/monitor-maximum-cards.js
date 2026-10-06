@@ -301,18 +301,20 @@ async function main() {
         console.log("상품 상태 변경이 없어 상태 파일을 갱신하지 않습니다.");
     }
 
-    fs.writeFileSync(
-        "maximum-card-alerts.json",
-        JSON.stringify(
-            {
-                checkedAt: output.checkedAt,
-                alerts: newAlerts
-            },
-            null,
-            2
-        ),
-        "utf8"
-    );
+    if (newAlerts.length > 0) {
+        fs.writeFileSync(
+            "maximum-card-alerts.json",
+            JSON.stringify(
+                {
+                    checkedAt: output.checkedAt,
+                    alerts
+                },
+                null,
+                2
+            ),
+            "utf8"
+        );
+    }
 
     for (const alert of newAlerts) {
         console.log(
