@@ -40,6 +40,7 @@
         const ALERT_URL = "./maximum-card-alerts.json";
         const POLL_INTERVAL = 60 * 1000;
         const SEEN_ALERTS_KEY = "postmateMaximumCardSeenAlerts";
+        const NOTIFICATION_ENABLED_KEY = "postmateMaximumCardNotificationEnabled";
 
         let initialized = false;
 
@@ -76,7 +77,7 @@
                 item.status && item.status !== "판매예정" && item.status !== "판매완료"
             );
 
-            document.getElementById("maximumStatus").textContent =
+                document.getElementById("maximumStatus").textContent =
                 "마지막 확인 : " + formatDate(data.checkedAt) +
                 " · 전체 " + items.length + "개";
 
@@ -188,14 +189,55 @@
                 return;
             }
 
+            // 이미 허용된 경우 다시 권한을 요청하지 않고 활성 상태만 유지합니다.
+            if (Notification.permission === "granted") {
+                setNotificationEnabled(true);
+                updateNotificationButton();
+
+                new Notification("📮 Postmate 알림", {
+                    body: "맥시멈카드 판매 상태 알림이 켜져 있습니다."
+                });
+
+                return;
+            }
+
+            if (Notification.permission === "denied") {
+                alert("브라우저 설정에서 Postmate 알림 권한을 허용해 주세요.");
+                updateNotificationButton();
+                return;
+            }
+
             const permission = await Notification.requestPermission();
 
-            updateNotificationButton();
-
             if (permission === "granted") {
+                setNotificationEnabled(true);
+
                 new Notification("📮 Postmate 알림 설정 완료", {
                     body: "맥시멈카드 판매 상태 변경을 알려드릴게요."
                 });
+            } else {
+                setNotificationEnabled(false);
+            }
+
+            updateNotificationButton();
+        }
+
+        function setNotificationEnabled(enabled) {
+            try {
+                localStorage.setItem(
+                    NOTIFICATION_ENABLED_KEY,
+                    enabled ? "true" : "false"
+                );
+            } catch (error) {
+                console.error("알림 설정 저장 실패:", error);
+            }
+        }
+
+        function isNotificationEnabled() {
+            try {
+                return localStorage.getItem(NOTIFICATION_ENABLED_KEY) === "true";
+            } catch {
+                return false;
             }
         }
 
@@ -208,9 +250,28 @@
                 return;
             }
 
-            if (Notification.permission === "granted") {
+            const permission = Notification.permission;
+            const enabled = isNotificationEnabled();
+
+            // 브라우저 권한이 실제로 허용된 상태면 새로고침해도 항상 켜짐으로 표시합니다.
+            if (permission === "granted" && enabled) {
                 button.textContent = "🔔 브라우저 알림 켜짐";
-            } else if (Notification.permission === "denied") {
+                button.classList.add("notification-enabled");
+                return;
+            }
+
+            if (permission === "granted") {
+                // 이전 버전에서 이미 허용했던 경우도 자동으로 활성화 상태로 복구합니다.
+                setNotificationEnabled(true);
+                button.textContent = "🔔 브라우저 알림 켜짐";
+                button.classList.add("notification-enabled");
+                return;
+            }
+
+            button.classList.remove("notification-enabled");
+
+            if (permission === "denied") {
+                setNotificationEnabled(false);
                 button.textContent = "🔕 브라우저 알림이 차단됨";
             } else {
                 button.textContent = "🔔 브라우저 알림 켜기";
@@ -263,9 +324,21 @@
                 document.getElementById("header").innerHTML = data;
             });
 
+        // 페이지를 다시 열거나 새로고침해도 알림 버튼 상태를 즉시 복구합니다.
+        updateNotificationButton();
+
         loadMaximumCards();
 
         setInterval(loadMaximumCards, POLL_INTERVAL);
+
+        // 다른 탭에서 권한이나 브라우저 설정이 변경된 경우에도 상태를 동기화합니다.
+        window.addEventListener("focus", updateNotificationButton);
+        document.addEventListener("visibilitychange", function () {
+            if (!document.hidden) {
+                updateNotificationButton();
+                loadMaximumCards();
+            }
+        });
     </script>
 </body>
 
