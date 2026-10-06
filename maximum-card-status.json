@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-06T04:47:00.373Z",
+  "checkedAt": "2026-10-06T04:54:00.168Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal",
   "excludedStatuses": [
     "판매예정",
@@ -33,6 +33,96 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "F39203",
+      "title": "[맥시멈카드] 세계 해사의 날",
+      "price": "3,400",
+      "issueDate": "2026.09.15",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
+    },
+    {
+      "id": "F39202",
+      "title": "[맥시멈카드] 세계 해사의 날",
+      "price": "1,300",
+      "issueDate": "2026.09.15",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "F39192",
+      "title": "[맥시멈카드] 2026 여수세계섬박람...",
+      "price": "1,300",
+      "issueDate": "2026.09.04",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "3919",
+      "title": "[맥시멈카드] 백범 김구 탄생 150...",
+      "price": "500",
+      "issueDate": "2026.09.04",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
+    },
+    {
+      "id": "F39182",
+      "title": "[맥시멈카드] 백범 김구 탄생 150...",
+      "price": "1,300",
+      "issueDate": "2026.08.28",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "F39132",
+      "title": "[맥시멈카드] 로보트태권V",
+      "price": "7,500",
+      "issueDate": "2026.07.29",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "3901",
+      "title": "[맥시멈카드] 프린세스 캐치! 티니핑...",
+      "price": "2900",
+      "issueDate": "2026.07.01",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
+    },
+    {
+      "id": "F38792",
+      "title": "[맥시멈카드] 프린세스 캐치! 티니핑...",
+      "price": "12,000",
+      "issueDate": "2026.05.04",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/imgnew/2016new/stamp_sold_out.gif"
+    },
+    {
+      "id": "F38612",
+      "title": "[맥시멈카드] 아기 동물",
+      "price": "4,800",
+      "issueDate": "2026.01.28",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
+    },
+    {
+      "id": "3808",
+      "title": "[맥시멈카드]민속놀이 (2024)",
+      "price": "1,720",
+      "issueDate": "2025.05.08",
+      "status": "판매완료",
+      "url": "javascript:void(0);",
+      "image": "https://service.epost.go.kr/np2assets/images/e1/logo.gif"
     }
   ],
   "alerts": []
