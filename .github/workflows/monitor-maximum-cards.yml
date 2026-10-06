@@ -100,7 +100,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add maximum-card-status.json
+          git add maximum-card-status.json maximum-card-alerts.json
 
           if git diff --cached --quiet; then
             echo "변경된 맥시멈카드 상태가 없습니다."
