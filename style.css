@@ -299,6 +299,80 @@ button:active {
 }
 
 /* =========================================================
+우표 검색 - 색상 필터
+========================================================= */
+
+.color-filter {
+    margin: 14px 0 20px;
+    padding: 14px;
+    background: #FFFFFF;
+    border: 3px solid #4B4453;
+    box-shadow: 4px 4px 0 #4B4453;
+}
+
+.color-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.color-filter-title {
+    font-size: 18px;
+}
+
+.color-filter-clear {
+    padding: 5px 9px;
+    font-size: 14px;
+    border: 2px solid #4B4453;
+    box-shadow: 2px 2px 0 #4B4453;
+    background: #FFD6A5;
+}
+
+.color-filter-clear:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.color-filter-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.color-filter-button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #FFFFFF;
+    border: 3px solid #4B4453;
+    border-radius: 50%;
+    box-shadow: 3px 3px 0 #4B4453;
+    cursor: pointer;
+}
+
+.color-filter-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #4B4453;
+}
+
+.color-filter-button.selected {
+    background: #B8F2E6;
+    box-shadow: 1px 1px 0 #4B4453;
+    transform: translate(2px, 2px);
+}
+
+.color-filter-button .stamp-color-dot {
+    width: 16px;
+    height: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================================
 우표 검색 - 관련 키워드
 ========================================================= */
 
