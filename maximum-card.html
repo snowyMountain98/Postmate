@@ -38,6 +38,7 @@
     <script>
         const STATUS_URL = "./maximum-card-status.json";
         const ALERT_URL = "./maximum-card-alerts.json";
+        const EPOST_FIRST_DAY_COVER_URL = "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000";
         const POLL_INTERVAL = 60 * 1000;
         const SEEN_ALERTS_KEY = "postmateMaximumCardSeenAlerts";
         const NOTIFICATION_ENABLED_KEY = "postmateMaximumCardNotificationEnabled";
@@ -90,7 +91,7 @@
             }
 
             list.innerHTML = available.map(item => {
-                const link = item.url || "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal";
+                const link = item.url || EPOST_FIRST_DAY_COVER_URL;
 
                 return `
                     <div class="stamp-card">
