@@ -284,10 +284,40 @@
                 const card = document.createElement("div");
                 card.className = "stamp-card";
 
+                const colorMap = {
+                    "빨강": "red",
+                    "파랑": "blue",
+                    "노랑": "yellow",
+                    "초록": "green",
+                    "녹색": "green",
+                    "주황": "orange",
+                    "분홍": "pink",
+                    "보라": "purple",
+                    "갈색": "brown",
+                    "검정": "black",
+                    "흰색": "white",
+                    "회색": "gray",
+                    "금색": "gold",
+                    "은색": "silver"
+                };
+
+                const colorKeywords = new Set(Object.keys(colorMap));
+
                 const tags = (stamp.keywords || [])
-                    .map(keyword =>
-                        `<span class="stamp-tag">#${keyword}</span>`
-                    )
+                    .map(keyword => {
+                        const normalizedKeyword = String(keyword).trim();
+
+                        if (colorKeywords.has(normalizedKeyword)) {
+                            return `
+                                <span class="stamp-color-tag" title="${normalizedKeyword}">
+                                    <span class="stamp-color-dot stamp-color-${colorMap[normalizedKeyword]}" aria-hidden="true"></span>
+                                    <span class="stamp-color-name">${normalizedKeyword}</span>
+                                </span>
+                            `;
+                        }
+
+                        return `<span class="stamp-tag">#${normalizedKeyword}</span>`;
+                    })
                     .join("");
 
                 card.innerHTML = `
