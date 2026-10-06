@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>맥시멈카드 판매 알림</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="header"></div>
+
+    <div class="container">
+        <h1 class="search-title">📮 맥시멈카드 알림</h1>
+
+        <div class="maximum-alert-box">
+            <div class="maximum-alert-title">판매 가능 상태 감시</div>
+            <p id="maximumAlertDescription" class="maximum-alert-description">
+                판매예정 / 판매완료가 아닌 맥시멈카드를 자동으로 확인합니다.
+            </p>
+
+            <button id="notificationButton" type="button" class="maximum-notification-button"
+                onclick="requestNotificationPermission()">
+                🔔 브라우저 알림 켜기
+            </button>
+
+            <div id="maximumStatus" class="search-info">
+                상태를 불러오는 중...
+            </div>
+        </div>
+
+        <div id="maximumCardList" class="stamp-list">
+            <div class="loading">📮 맥시멈카드 상태를 확인하는 중...</div>
+        </div>
+    </div>
+
+    <script>
+        const STATUS_URL = "./maximum-card-status.json";
+        const ALERT_URL = "./maximum-card-alerts.json";
+        const POLL_INTERVAL = 60 * 1000;
+        const SEEN_ALERTS_KEY = "postmateMaximumCardSeenAlerts";
+
+        let initialized = false;
+
+        async function loadMaximumCards() {
+            try {
+                const response = await fetch(STATUS_URL + "?t=" + Date.now(), {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("상태 파일을 아직 사용할 수 없습니다.");
+                }
+
+                const data = await response.json();
+                renderMaximumCards(data);
+                updateNotificationButton();
+                await checkAlerts();
+                initialized = true;
+
+            } catch (error) {
+                console.error(error);
+
+                document.getElementById("maximumStatus").textContent =
+                    "아직 첫 번째 상태 확인이 완료되지 않았어요. GitHub Actions가 데이터를 수집하면 표시됩니다.";
+
+                document.getElementById("maximumCardList").innerHTML =
+                    '<div class="no-result">📮 아직 감시 데이터가 없습니다.<br><br>GitHub Actions의 첫 실행 후 자동으로 표시됩니다.</div>';
+            }
+        }
+
+        function renderMaximumCards(data) {
+            const items = Array.isArray(data.items) ? data.items : [];
+            const available = items.filter(item =>
+                item.status && item.status !== "판매예정" && item.status !== "판매완료"
+            );
+
+            document.getElementById("maximumStatus").textContent =
+                "마지막 확인 : " + formatDate(data.checkedAt) +
+                " · 전체 " + items.length + "개";
+
+            const list = document.getElementById("maximumCardList");
+
+            if (available.length === 0) {
+                list.innerHTML =
+                    '<div class="no-result">현재 판매 가능한 맥시멈카드가 없어요.</div>';
+                return;
+            }
+
+            list.innerHTML = available.map(item => {
+                const link = item.url || "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal";
+
+                return `
+                    <div class="stamp-card">
+                        <div class="stamp-card-content">
+                            <div class="stamp-image-wrap">
+                                ${item.image
+                                    ? `<img class="stamp-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title || "맥시멈카드")}" loading="lazy">`
+                                    : '<div class="stamp-image-empty">📮</div>'
+                                }
+                            </div>
+
+                            <div class="stamp-info">
+                                <h2 class="stamp-title">
+                                    ${escapeHtml(item.title || "제목 없음")}
+                                </h2>
+
+                                <div class="stamp-design maximum-sale-status">
+                                    🟢 ${escapeHtml(item.status || "판매중")}
+                                </div>
+
+                                <div class="stamp-meta">
+                                    <div>💰 ${escapeHtml(item.price || "-")}원</div>
+                                    <div>📅 ${escapeHtml(item.issueDate || "-")}</div>
+                                    <div>🔢 No.${escapeHtml(item.id || "-")}</div>
+                                </div>
+
+                                <a class="maximum-buy-link"
+                                    href="${escapeHtml(link)}"
+                                    target="_blank"
+                                    rel="noopener noreferrer">
+                                    우체국에서 확인 →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function checkAlerts() {
+            try {
+                const response = await fetch(ALERT_URL + "?t=" + Date.now(), {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const alerts = Array.isArray(data.alerts) ? data.alerts : [];
+
+                const seen = getSeenAlertIds();
+
+                // 페이지를 처음 열었을 때의 기존 알림은 중복 알림하지 않습니다.
+                if (!initialized) {
+                    alerts.forEach(alert => seen.add(alert.id));
+                    saveSeenAlertIds(seen);
+                    return;
+                }
+
+                for (const alert of alerts) {
+                    if (seen.has(alert.id)) {
+                        continue;
+                    }
+
+                    seen.add(alert.id);
+                    notifyAlert(alert);
+                }
+
+                saveSeenAlertIds(seen);
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function notifyAlert(alert) {
+            const message =
+                `${alert.title}\n${alert.previousStatus} → ${alert.currentStatus}`;
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("📮 맥시멈카드 판매 알림", {
+                    body: message
+                });
+            }
+
+            alert(
+                "📮 맥시멈카드 판매 알림\n\n" + message
+            );
+        }
+
+        async function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("이 브라우저에서는 알림을 지원하지 않아요.");
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+
+            updateNotificationButton();
+
+            if (permission === "granted") {
+                new Notification("📮 Postmate 알림 설정 완료", {
+                    body: "맥시멈카드 판매 상태 변경을 알려드릴게요."
+                });
+            }
+        }
+
+        function updateNotificationButton() {
+            const button = document.getElementById("notificationButton");
+
+            if (!("Notification" in window)) {
+                button.textContent = "🔔 이 브라우저는 알림을 지원하지 않아요";
+                button.disabled = true;
+                return;
+            }
+
+            if (Notification.permission === "granted") {
+                button.textContent = "🔔 브라우저 알림 켜짐";
+            } else if (Notification.permission === "denied") {
+                button.textContent = "🔕 브라우저 알림이 차단됨";
+            } else {
+                button.textContent = "🔔 브라우저 알림 켜기";
+            }
+        }
+
+        function getSeenAlertIds() {
+            try {
+                const value = localStorage.getItem(SEEN_ALERTS_KEY);
+                const ids = value ? JSON.parse(value) : [];
+                return new Set(Array.isArray(ids) ? ids : []);
+            } catch {
+                return new Set();
+            }
+        }
+
+        function saveSeenAlertIds(ids) {
+            localStorage.setItem(
+                SEEN_ALERTS_KEY,
+                JSON.stringify(Array.from(ids).slice(-100))
+            );
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date = new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return value;
+            }
+
+            return date.toLocaleString("ko-KR");
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        fetch("header.html")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("header").innerHTML = data;
+            });
+
+        loadMaximumCards();
+
+        setInterval(loadMaximumCards, POLL_INTERVAL);
+    </script>
+</body>
+
+</html>
