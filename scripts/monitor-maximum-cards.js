@@ -272,25 +272,33 @@ async function main() {
 
     const newAlerts = alerts.slice(previousAlertCount);
 
+    const stateChanged =
+        !previous.initialized ||
+        JSON.stringify(previous.items) !== JSON.stringify(current);
+
     const output = {
         initialized: true,
-        checkedAt: new Date().toISOString(),
+        checkedAt: stateChanged
+            ? new Date().toISOString()
+            : (previous.checkedAt || new Date().toISOString()),
         sourceUrl: LIST_URL,
         excludedStatuses: Array.from(EXCLUDED_STATUS),
         items: current,
         alerts
     };
 
+    // 실제 상품 상태가 바뀐 경우에만 저장소의 상태 파일을 갱신합니다.
+    // 매 10분 실행해도 checkedAt 때문에 매번 커밋되지 않습니다.
     const nextText = JSON.stringify(output, null, 2);
     const previousText = fs.existsSync(OUTPUT_FILE)
         ? fs.readFileSync(OUTPUT_FILE, "utf8")
         : "";
 
-    if (nextText !== previousText) {
+    if (stateChanged || nextText !== previousText) {
         fs.writeFileSync(OUTPUT_FILE, nextText, "utf8");
         console.log(`상태 파일 갱신: ${OUTPUT_FILE}`);
     } else {
-        console.log("변경 사항이 없어 상태 파일을 갱신하지 않습니다.");
+        console.log("상품 상태 변경이 없어 상태 파일을 갱신하지 않습니다.");
     }
 
     fs.writeFileSync(
