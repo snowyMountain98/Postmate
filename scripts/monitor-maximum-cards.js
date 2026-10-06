@@ -79,7 +79,12 @@ function extractCard(container) {
     const linkElement = titleElement?.closest("a") || container.querySelector("a[href]");
     const imageElement = container.querySelector("img");
 
-    const status = extractStatus(container);
+    let status = extractStatus(container);
+
+    // 판매예정/판매완료 배지가 없으면 현재 판매 가능한 상태로 간주합니다.
+    if (!status) {
+        status = "판매중";
+    }
 
     if (!noMatch && !priceMatch && !titleElement) {
         return null;
@@ -259,9 +264,13 @@ async function main() {
         throw new Error("맥시멈카드 데이터를 찾지 못했습니다. 우체국 페이지 구조가 변경되었을 수 있습니다.");
     }
 
+    const previousAlertCount = previous.alerts.length;
+
     const alerts = previous.initialized
         ? compare(previous, current)
         : [];
+
+    const newAlerts = alerts.slice(previousAlertCount);
 
     const output = {
         initialized: true,
@@ -284,10 +293,27 @@ async function main() {
         console.log("변경 사항이 없어 상태 파일을 갱신하지 않습니다.");
     }
 
-    for (const alert of alerts) {
+    fs.writeFileSync(
+        "maximum-card-alerts.json",
+        JSON.stringify(
+            {
+                checkedAt: output.checkedAt,
+                alerts: newAlerts
+            },
+            null,
+            2
+        ),
+        "utf8"
+    );
+
+    for (const alert of newAlerts) {
         console.log(
             `알림 대상: ${alert.title} / ${alert.previousStatus} → ${alert.currentStatus}`
         );
+    }
+
+    if (newAlerts.length > 0) {
+        console.log(`NEW_ALERT_COUNT=${newAlerts.length}`);
     }
 }
 
