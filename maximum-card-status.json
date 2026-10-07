@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-06T05:04:21.351Z",
+  "checkedAt": "2026-10-07T06:51:05.825Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -35,24 +35,6 @@
       "image": "https://image.epost.go.kr/service/upload/stamp/50039202.jpg"
     },
     {
-      "id": "F39192",
-      "title": "[맥시멈카드] 2026 여수세계섬박람회",
-      "price": "1,300",
-      "issueDate": "2026.09.04",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039192_2.jpg"
-    },
-    {
-      "id": "F39182",
-      "title": "[맥시멈카드] 백범 김구 탄생 150주년",
-      "price": "1,300",
-      "issueDate": "2026.08.28",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039192.jpg"
-    },
-    {
       "id": "F39132",
       "title": "[맥시멈카드] 로보트태권V",
       "price": "7,500",
@@ -84,7 +66,7 @@
       "title": "[맥시멈카드]민속놀이 (2024)",
       "price": "2,400",
       "issueDate": "2024.11.14",
-      "status": "판매중",
+      "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50037832.jpg"
     },
