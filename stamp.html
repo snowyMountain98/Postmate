@@ -132,6 +132,20 @@
                     }
                 }
 
+                // 4개
+                for (let i = 0; i < numbers.length; i++) {
+                    for (let j = i + 1; j < numbers.length; j++) {
+                        for (let k = j + 1; k < numbers.length; k++) {
+                            for (let l = k + 1; l < numbers.length; l++) {
+                                if (numbers[i] + numbers[j] + numbers[k] + numbers[l] == target) {
+                                    showResult("✅ " + numbers[i] + " + " + numbers[j] + " + " + numbers[k] + " + " + numbers[l] + " = " + target);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 document.getElementById("result").innerHTML = "아직 찾지 못했습니다.";
             }
 
