@@ -73,7 +73,6 @@ jobs:
               "",
               `**${alert.title}**`,
               `상태: ${alert.previousStatus} → **${alert.currentStatus}**`,
-              alert.url || "우체국 우표·엽서류"
             ].join("\n")
           );
 
