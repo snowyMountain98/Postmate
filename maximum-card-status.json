@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-13T07:21:27.721Z",
+  "checkedAt": "2026-10-15T05:33:26.684Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -12,7 +12,7 @@
       "title": "[맥시멈카드] 주시경 탄생 150돌",
       "price": "1,300",
       "issueDate": "2026.10.08",
-      "status": "판매중",
+      "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039272.jpg"
     },
@@ -35,15 +35,6 @@
       "image": "https://image.epost.go.kr/service/upload/stamp/50039202.jpg"
     },
     {
-      "id": "F39132",
-      "title": "[맥시멈카드] 로보트태권V",
-      "price": "7,500",
-      "issueDate": "2026.07.29",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039132.jpg"
-    },
-    {
       "id": "F38792",
       "title": "[맥시멈카드] 프린세스 캐치! 티니핑",
       "price": "12,000",
@@ -51,15 +42,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50038792_2.jpg"
-    },
-    {
-      "id": "F38612",
-      "title": "[맥시멈카드] 아기 동물",
-      "price": "4,800",
-      "issueDate": "2026.01.28",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50038612.jpg"
     },
     {
       "id": "F37832",
