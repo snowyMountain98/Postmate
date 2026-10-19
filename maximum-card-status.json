@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-18T05:24:23.888Z",
+  "checkedAt": "2026-10-19T05:40:47.779Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -24,15 +24,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039212.jpg"
-    },
-    {
-      "id": "F39202",
-      "title": "[맥시멈카드] 세계 해사의 날",
-      "price": "1,300",
-      "issueDate": "2026.09.15",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039202.jpg"
     },
     {
       "id": "F38792",
