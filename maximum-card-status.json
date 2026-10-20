@@ -1,12 +1,21 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-19T05:40:47.779Z",
+  "checkedAt": "2026-10-20T05:40:58.885Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
     "판매완료"
   ],
   "items": [
+    {
+      "id": "F39282",
+      "title": "[맥시멈카드] 페이커",
+      "price": "14,000",
+      "issueDate": "2026.10.23",
+      "status": "판매예정",
+      "url": "javascript:void(0);",
+      "image": "https://image.epost.go.kr/service/upload/stamp/50039282.jpg"
+    },
     {
       "id": "F39272",
       "title": "[맥시멈카드] 주시경 탄생 150돌",
