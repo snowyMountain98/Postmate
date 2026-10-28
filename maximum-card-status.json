@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-27T05:58:48.535Z",
+  "checkedAt": "2026-10-28T06:37:40.369Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -33,15 +33,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039212.jpg"
-    },
-    {
-      "id": "F38792",
-      "title": "[맥시멈카드] 프린세스 캐치! 티니핑",
-      "price": "12,000",
-      "issueDate": "2026.05.04",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50038792_2.jpg"
     },
     {
       "id": "F37832",
