@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-28T06:37:40.369Z",
+  "checkedAt": "2026-10-29T06:45:16.906Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -21,7 +21,7 @@
       "title": "[맥시멈카드] 주시경 탄생 150돌",
       "price": "1,300",
       "issueDate": "2026.10.08",
-      "status": "판매완료",
+      "status": "판매중",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039272.jpg"
     },
@@ -125,6 +125,15 @@
       "currentStatus": "판매중",
       "url": "javascript:void(0);",
       "detectedAt": "2026-10-26T05:45:58.587Z"
+    },
+    {
+      "id": "F39272-1793256316905-0",
+      "itemKey": "F39272",
+      "title": "[맥시멈카드] 주시경 탄생 150돌",
+      "previousStatus": "판매완료",
+      "currentStatus": "판매중",
+      "url": "javascript:void(0);",
+      "detectedAt": "2026-10-29T06:45:16.905Z"
     }
   ]
 }

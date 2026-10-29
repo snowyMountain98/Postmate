@@ -1,14 +1,14 @@
 {
-  "checkedAt": "2026-10-26T05:45:58.588Z",
+  "checkedAt": "2026-10-29T06:45:16.906Z",
   "alerts": [
     {
-      "id": "F39272-1792993558587-0",
+      "id": "F39272-1793256316905-0",
       "itemKey": "F39272",
       "title": "[맥시멈카드] 주시경 탄생 150돌",
       "previousStatus": "판매완료",
       "currentStatus": "판매중",
       "url": "javascript:void(0);",
-      "detectedAt": "2026-10-26T05:45:58.587Z"
+      "detectedAt": "2026-10-29T06:45:16.905Z"
     }
   ]
 }
