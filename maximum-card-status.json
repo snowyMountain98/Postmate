@@ -1,12 +1,21 @@
 {
   "initialized": true,
-  "checkedAt": "2026-10-29T06:45:16.906Z",
+  "checkedAt": "2026-10-30T06:47:04.127Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
     "판매완료"
   ],
   "items": [
+    {
+      "id": "F39392",
+      "title": "[맥시멈카드]훈맹정음 반포 100주년",
+      "price": "1,300",
+      "issueDate": "2026.11.04",
+      "status": "판매예정",
+      "url": "javascript:void(0);",
+      "image": "https://image.epost.go.kr/service/upload/stamp/50039392.jpg"
+    },
     {
       "id": "F39282",
       "title": "[맥시멈카드] 페이커",
@@ -21,7 +30,7 @@
       "title": "[맥시멈카드] 주시경 탄생 150돌",
       "price": "1,300",
       "issueDate": "2026.10.08",
-      "status": "판매중",
+      "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039272.jpg"
     },
