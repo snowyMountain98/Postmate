@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-11-06T07:39:43.301Z",
+  "checkedAt": "2026-11-07T06:50:17.783Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -12,7 +12,7 @@
       "title": "[맥시멈카드]훈맹정음 반포 100주년",
       "price": "1,300",
       "issueDate": "2026.11.04",
-      "status": "판매완료",
+      "status": "판매중",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039392.jpg"
     },
@@ -42,15 +42,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039212.jpg"
-    },
-    {
-      "id": "F37832",
-      "title": "[맥시멈카드]민속놀이 (2024)",
-      "price": "2,400",
-      "issueDate": "2024.11.14",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50037832.jpg"
     },
     {
       "id": "F35162",
@@ -143,6 +134,15 @@
       "currentStatus": "판매중",
       "url": "javascript:void(0);",
       "detectedAt": "2026-10-29T06:45:16.905Z"
+    },
+    {
+      "id": "F39392-1794034217783-0",
+      "itemKey": "F39392",
+      "title": "[맥시멈카드]훈맹정음 반포 100주년",
+      "previousStatus": "판매완료",
+      "currentStatus": "판매중",
+      "url": "javascript:void(0);",
+      "detectedAt": "2026-11-07T06:50:17.783Z"
     }
   ]
 }

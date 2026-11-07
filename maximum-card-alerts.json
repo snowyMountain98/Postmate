@@ -1,14 +1,14 @@
 {
-  "checkedAt": "2026-10-29T06:45:16.906Z",
+  "checkedAt": "2026-11-07T06:50:17.783Z",
   "alerts": [
     {
-      "id": "F39272-1793256316905-0",
-      "itemKey": "F39272",
-      "title": "[맥시멈카드] 주시경 탄생 150돌",
+      "id": "F39392-1794034217783-0",
+      "itemKey": "F39392",
+      "title": "[맥시멈카드]훈맹정음 반포 100주년",
       "previousStatus": "판매완료",
       "currentStatus": "판매중",
       "url": "javascript:void(0);",
-      "detectedAt": "2026-10-29T06:45:16.905Z"
+      "detectedAt": "2026-11-07T06:50:17.783Z"
     }
   ]
 }
