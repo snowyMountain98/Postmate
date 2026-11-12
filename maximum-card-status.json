@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-11-11T07:29:45.592Z",
+  "checkedAt": "2026-11-12T07:57:20.309Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
