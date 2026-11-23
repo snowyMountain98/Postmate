@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-11-22T07:44:44.525Z",
+  "checkedAt": "2026-11-23T08:34:17.754Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -33,15 +33,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039272.jpg"
-    },
-    {
-      "id": "F39212",
-      "title": "[맥시멈카드] 한국의 단청",
-      "price": "7,800",
-      "issueDate": "2026.10.01",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039212.jpg"
     },
     {
       "id": "F35162",
