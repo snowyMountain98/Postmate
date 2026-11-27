@@ -1,12 +1,21 @@
 {
   "initialized": true,
-  "checkedAt": "2026-11-26T09:09:29.064Z",
+  "checkedAt": "2026-11-27T09:25:49.037Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
     "판매완료"
   ],
   "items": [
+    {
+      "id": "F39452",
+      "title": "[맥시멈카드] 대한민국 수출 1조 달러 달성",
+      "price": "1,300",
+      "issueDate": "2026.12.04",
+      "status": "판매예정",
+      "url": "javascript:void(0);",
+      "image": "https://image.epost.go.kr/service/upload/stamp/500394542_1.jpg"
+    },
     {
       "id": "F39432",
       "title": "[맥시멈카드] 연하우표(2027)",
