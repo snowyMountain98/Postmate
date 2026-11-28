@@ -1,6 +1,6 @@
 {
   "initialized": true,
-  "checkedAt": "2026-11-27T09:25:49.037Z",
+  "checkedAt": "2026-11-28T08:41:18.754Z",
   "sourceUrl": "https://service.epost.go.kr/stamp.RetrievePostagGoodsList.postal?svctype=9&targetRow=1&timediv=2000",
   "excludedStatuses": [
     "판매예정",
@@ -33,15 +33,6 @@
       "status": "판매완료",
       "url": "javascript:void(0);",
       "image": "https://image.epost.go.kr/service/upload/stamp/50039392.jpg"
-    },
-    {
-      "id": "F39282",
-      "title": "[맥시멈카드] 페이커",
-      "price": "14,000",
-      "issueDate": "2026.10.23",
-      "status": "판매완료",
-      "url": "javascript:void(0);",
-      "image": "https://image.epost.go.kr/service/upload/stamp/50039282.jpg"
     },
     {
       "id": "F39272",
